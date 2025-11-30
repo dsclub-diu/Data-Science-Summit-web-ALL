@@ -13,8 +13,8 @@ const poppins = Poppins({
 export const metadata = {
   title: "5th National Data Science Summit 2025",
   description:
-    "Join us for the 5th National Data Science Summit 2025 at Daffodil Smart City, Birulai, Savar, Dhaka. Explore the latest in AI and data science with industry experts and enthusiasts.",
-
+    "Join us for the 5th National Data Science Summit 2025 at Daffodil Smart City, Birulia, Savar, Dhaka. Explore the latest in AI and data science with industry experts and enthusiasts.",
+  keywords: ["Data Science", "AI", "Machine Learning", "Deep Learning", "Big Data", "Analytics", "Daffodil International University", "Data Science Summit 2025", "National Data Science Summit", "Dhaka", "Bangladesh", "Tech Event Dhaka", "DIU", "DS Club", "DIU DS Club"],
 };
 
 export default function RootLayout({ children }) {
