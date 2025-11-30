@@ -292,31 +292,6 @@ export default function PromptCraftSubmissionPage() {
                                     required
                                 />
                             </div>
-
-                            <div className="grid md:grid-cols-2 gap-4">
-                                <div>
-                                    <label className="block text-gray-300 font-medium mb-2">AI Tools Used</label>
-                                    <input
-                                        type="text"
-                                        name="toolsUsed"
-                                        value={formData.toolsUsed}
-                                        onChange={handleInputChange}
-                                        placeholder="e.g., ChatGPT, Midjourney, Runway, etc."
-                                        className="w-full px-4 py-3 bg-slate-800/50 border border-gray-600 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent text-white"
-                                    />
-                                </div>
-                                <div>
-                                    <label className="block text-gray-300 font-medium mb-2">Creative Statement</label>
-                                    <textarea
-                                        name="creativeStatement"
-                                        value={formData.creativeStatement}
-                                        onChange={handleInputChange}
-                                        placeholder="Your artistic vision and inspiration"
-                                        rows="3"
-                                        className="w-full px-4 py-3 bg-slate-800/50 border border-gray-600 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent text-white resize-none"
-                                    />
-                                </div>
-                            </div>
                         </div>
 
                         {/* Media Upload */}
