@@ -107,7 +107,7 @@ const guests = [
     {
         name: "Syed Refat Al Abrar",
         img: "/guests/refat-al-abrar.png",
-        designation: "Staff Consultant",
+        designation: "Staff Consultant Engineer",
         organization: "Cefalo",
         category: "speaker"
     }
