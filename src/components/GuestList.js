@@ -85,7 +85,7 @@ const guests = [
     // Keynote Speaker
     {
         name: "Sadman Araf",
-        img: "/guests/sadman-araf.png",
+        img: "/guests/sadman-araf.jpeg",
         designation: "Data Scientist",
         organization: "Grameenphone Ltd",
         category: "speaker",
@@ -99,7 +99,7 @@ const guests = [
     },
     {
         name: "Sakhawat Hossain",
-        img: "/guests/sakhawat-hossain.png",
+        img: "/guests/sakhawat-hossain.jpeg",
         designation: "Senior Software Engineer",
         organization: "Cefalo",
         category: "speaker"
