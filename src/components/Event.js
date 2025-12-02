@@ -30,8 +30,8 @@ export default function EventsSection() {
       description: 'Join data enthusiasts, AI experts, and innovators as they come together to tackle real-world problems, push the limits of machine learning, and dive into the exciting world of big data and AI.',
       date: '11.12.2025',
       location: 'Daffodil Smart City, Birulia, Dhaka-1216',
-      tags: ['ML / AI', 'Deep Learning','Big Data', 'AI Ethics'],
-      time: '09:00 AM - 05:00 PM',
+      tags: ['ML / AI', 'Deep Learning', 'Big Data', 'AI Ethics'],
+      time: '11:00 AM - 03:00 PM',
       registerLink: 'https://docs.google.com/forms/d/e/1FAIpQLSc58w2I2BFp4Mmt5uRC3ZYSTP4WZWttZJ_CoBKviUUCxkEWjg/viewform?usp=preview',
       presentedBy: 'Data Solution-360',
       event: '5th National Data Science Summit 2025',
@@ -59,7 +59,7 @@ export default function EventsSection() {
       date: '11.12.2025',
       location: 'Daffodil Smart City, Birulia, Dhaka-1216',
       tags: ['Innovation', 'Tech Projects', 'Prototyping', 'Showcase'],
-      time: '09:00 AM - 05:00 PM',
+      time: '10:00 AM - 03:00 PM',
       registerLink: 'https://docs.google.com/forms/d/e/1FAIpQLSe7jPzg0uHjqGkNSl72LB5Jb4Vv_vtuVrKIZ490EH-HfocWxQ/viewform?usp=preview',
       presentedBy: 'Data Science Lab',
       event: '5th National Data Science Summit 2025',
@@ -117,7 +117,7 @@ export default function EventsSection() {
       date: '11.12.2025',
       location: 'Daffodil Smart City, Birulia, Dhaka-1216',
       tags: ['Skill Development', 'Practical Learning', 'Interactive', 'Hands-On'],
-      time: '09:00 AM - 05:00 PM',
+      time: '10:30 AM - 11:30 PM',
       registerLink: 'https://forms.gle/zLfmJ2QbQdtvbMcE9',
       presentedBy: 'Data Science Lab',
       event: '5th National Data Science Summit 2025',
@@ -141,7 +141,7 @@ export default function EventsSection() {
       date: '11.12.2025',
       location: 'Daffodil Smart City, Birulia, Dhaka-1216',
       tags: ['Creative Ideas', 'Poster Session', 'Inspiration', 'Knowledge Sharing'],
-      time: '09:00 AM - 05:00 PM',
+      time: '11:30 AM - 12:45 PM',
       registerLink: 'https://docs.google.com/forms/d/e/1FAIpQLScEKI1gO_r05nAkxmEYm7D6vLvjoPjMPVCzZrF8EaVahmuX0Q/viewform?usp=preview',
       presentedBy: 'Data Science Lab',
       event: '5th National Data Science Summit 2025',
@@ -191,9 +191,8 @@ export default function EventsSection() {
             {events.map((event, idx) => (
               <div
                 key={event.id}
-                className={`group relative rounded-2xl border border-gray-700/50 bg-linear-to-br from-slate-800/40 to-slate-900/40 backdrop-blur-xl overflow-hidden transition-all duration-300 hover:border-cyan-500/50 flex flex-col h-full ${
-                  idx === 3 || idx === 4 ? 'md:col-span-2 lg:col-span-1 mx-auto' : ''
-                }`}
+                className={`group relative rounded-2xl border border-gray-700/50 bg-linear-to-br from-slate-800/40 to-slate-900/40 backdrop-blur-xl overflow-hidden transition-all duration-300 hover:border-cyan-500/50 flex flex-col h-full ${idx === 3 || idx === 4 ? 'md:col-span-2 lg:col-span-1 mx-auto' : ''
+                  }`}
               >
                 {/* linear Background Effect */}
                 <div className="absolute inset-0 bg-linear-to-br from-cyan-500/5 to-purple-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
@@ -201,12 +200,12 @@ export default function EventsSection() {
                 {/* Logo Section */}
                 <div className="relative px-8 md:px-8 pt-6 pb-4 border-b border-gray-700/30">
                   <Image
-                  src="/dss-logo.svg"
-                  alt="DSS Logo"
-                  width={120}
-                  height={50}
-                  className="h-8 md:h-10 object-contain"
-                />
+                    src="/dss-logo.svg"
+                    alt="DSS Logo"
+                    width={120}
+                    height={50}
+                    className="h-8 md:h-10 object-contain"
+                  />
                 </div>
 
                 {/* Content */}
@@ -258,7 +257,7 @@ export default function EventsSection() {
 
                   {/* Buttons - Pushed to Bottom */}
                   <div className="flex gap-3 mt-auto pt-6 border-t border-gray-700/30">
-                    <a 
+                    <a
                       href={event.registerLink}
                       target="_blank"
                       rel="noopener noreferrer"

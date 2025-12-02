@@ -110,6 +110,13 @@ const guests = [
         designation: "Staff Consultant Engineer",
         organization: "Cefalo",
         category: "speaker"
+    },
+    {
+        name: "H.M Nayem",
+        img: "/guests/nayem.png",
+        designation: "Technical Screener",
+        organization: "Toptal",
+        category: "speaker"
     }
 
 
