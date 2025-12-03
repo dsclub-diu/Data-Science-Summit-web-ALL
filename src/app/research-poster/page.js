@@ -89,24 +89,40 @@ export default function ResearchPosterPage() {
                             </div>
 
                             {/* Call to Action & Deadline */}
-                            <div className="mt-8 text-center">
-                                <div className="text-xl font-bold text-red-400 mb-3 p-2 bg-red-900/20 border border-red-500/30 rounded-lg inline-block shadow-inner">
-                                    <Timer className="w-5 h-5 inline-block mr-2" />
-                                    Submission Deadline: <span className="text-red-300">December 5, 2025</span>
+                            <div className="mt-8">
+                                <div className="grid md:grid-cols-3 gap-4 items-center">
+                                    <div className="md:col-span-2 space-y-3 text-left">
+                                        <h3 className="text-2xl font-bold text-white">Registration & Fees</h3>
+                                        <p className="text-gray-300">Individual: <span className="font-semibold text-cyan-300">400 BDT</span></p>
+                                        <p className="text-gray-300">Team (2 members): <span className="font-semibold text-cyan-300">800 BDT</span></p>
+                                        <p className="text-sm text-cyan-200/80">All club members receive a <span className="font-bold">10% discount</span>. Bring membership proof at the event.</p>
+                                    </div>
+
+                                    <div className="text-center">
+                                        <div className="inline-flex items-center px-4 py-3 bg-red-900/20 border border-red-500/30 text-red-200 rounded-lg shadow-inner">
+                                            <Timer className="w-5 h-5 mr-2 text-red-300" />
+                                            <div className="text-left">
+                                                <div className="text-xs uppercase text-red-200/80">Submission Deadline</div>
+                                                <div className="font-bold text-red-300">December 5, 2025</div>
+                                            </div>
+                                        </div>
+                                    </div>
                                 </div>
-                                <a
-                                    href="https://docs.google.com/forms/d/e/1FAIpQLScEKI1gO_r05nAkxmEYm7D6vLvjoPjMPVCzZrF8EaVahmuX0Q/viewform"
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="block w-full md:w-1/2 lg:w-1/3 mx-auto mt-4 px-6 py-3 bg-linear-to-r from-cyan-400 to-blue-500 text-white font-bold rounded-xl shadow-lg hover:from-cyan-300 hover:to-blue-400 transition duration-300 hover:shadow-xl"
-                                >
-                                    🔗 Register Now
-                                </a>
+
+                                <div className="mt-6 flex flex-col sm:flex-row items-center gap-4">
+                                    <a
+                                        href="https://docs.google.com/forms/d/e/1FAIpQLScEKI1gO_r05nAkxmEYm7D6vLvjoPjMPVCzZrF8EaVahmuX0Q/viewform"
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="w-full sm:w-auto px-6 py-3 bg-linear-to-r from-cyan-400 to-blue-500 text-slate-900 font-semibold rounded-xl shadow-lg hover:from-cyan-300 hover:to-blue-400 transition"
+                                    >
+                                        🔗 Register Now
+                                    </a>
+
+                                </div>
                             </div>
                         </div>
                     </section>
-
-                    {/* Section 1: Definition and Goal */}
                     <section className="mb-12">
                         <div className="bg-slate-800 p-6 sm:p-10 rounded-xl shadow-lg border-t-4 border-cyan-400">
                             <h2 className="text-3xl font-bold mb-4 flex items-center text-white">

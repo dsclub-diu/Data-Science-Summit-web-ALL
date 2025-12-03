@@ -233,7 +233,7 @@ export default function PromptcraftPage() {
         <div className="step-card p-6 md:p-8 rounded-xl mb-8">
           <h2 className="text-2xl font-bold text-blue-400 flex items-center mb-4">
             <span className="text-3xl mr-3 text-indigo-400">📅</span>
-            📅 Event Details & Registration
+            Event Details & Registration
           </h2>
 
           <div className="grid md:grid-cols-2 gap-6 text-slate-300">
@@ -255,8 +255,16 @@ export default function PromptcraftPage() {
                 <span className="mr-2 text-indigo-400">⏰</span>
                 <strong>December 5, 2025</strong>
               </p>
+              <div className="text-center mt-4 md:text-left">
+                <p className="mb-2">
+                  <span className="font-bold text-white block">Registration Fee:</span>
+                  <span className="mr-2 text-indigo-400">💰</span>
+                  <strong>200 BDT per participant</strong>
+                </p>
+              </div>
               <p className="mb-2 text-sm text-red-400 font-semibold">Don&apos;t wait! Spots are limited for this innovative event.</p>
             </div>
+
           </div>
 
           {/* REGISTRATION BUTTON IN FOOTER SECTION */}

@@ -138,7 +138,8 @@ export default function ProjectShowcasePage() {
 
                             {/* Registration & Deadline */}
                             <h3 className="text-2xl font-semibold mb-5 text-purple-400 border-b border-gray-700 pb-3">🗓️ Deadline & Registration</h3>
-                            <p className="text-3xl font-extrabold text-red-500 mb-6 text-center tracking-wider">Deadline: Dec 5, 2025</p>
+                            <p className="text-xl font-extrabold text-red-400 mb-6 text-center tracking-wider">Deadline: Dec 5, 2025</p>
+                            <p className="text-xl font-extrabold text-red-400 mb-6 text-center tracking-wider"> Fee: 1,000 BDT per team.</p>
                             <Link
                                 href="https://docs.google.com/forms/d/e/1FAIpQLSe7jPzg0uHjqGkNSl72LB5Jb4Vv_vtuVrKIZ490EH-HfocWxQ/viewform"
                                 target="_blank"
