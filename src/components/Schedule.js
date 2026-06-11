@@ -7,7 +7,7 @@ export default function ScheduleSection() {
       title: 'Welcome Seminar',
       description: 'Welcome Seminar - Opening with an introduction to "AI in Business" by leading experts.',
       time: '09:00 AM - 10:00 AM',
-      date: 'December 11, 2025',
+      date: 'July 12, 2026',
       location: 'Daffodil Smart City, Birulia, Dhaka-1216',
     },
 
@@ -16,7 +16,7 @@ export default function ScheduleSection() {
       title: 'Data Hackathon',
       description: 'Join us for a weekend of coding, innovation, and collaboration to solve real-world problems.',
       time: '11:00 AM - 03:00 PM',
-      date: 'December 11, 2025',
+      date: 'July 12, 2026',
       location: 'Daffodil Smart City, Birulia, Dhaka-1216',
     },
     {
@@ -24,7 +24,7 @@ export default function ScheduleSection() {
       title: 'Project Competition',
       description: 'Showcase your projects and compete for prizes with the best teams in the university.',
       time: '10:00 AM - 03:00 PM',
-      date: 'December 11, 2025',
+      date: 'July 12, 2026',
       location: 'Daffodil Smart City, Birulia, Dhaka-1216',
     },
     {
@@ -32,7 +32,7 @@ export default function ScheduleSection() {
       title: 'Promptcraft Challenge',
       description: 'Test your creativity and skill in this exciting prompt-based challenge.',
       time: '02:30 AM - 03:30 PM',
-      date: 'December 11, 2025',
+      date: 'July 12, 2026',
       location: 'Daffodil Smart City, Birulia, Dhaka-1216',
     },
     {
@@ -40,7 +40,7 @@ export default function ScheduleSection() {
       title: 'Hands-On Workshop',
       description: 'Participate in hands-on workshops covering various topics in technology and innovation.',
       time: '10:30 AM - 11:30 PM',
-      date: 'December 11, 2025',
+      date: 'July 12, 2026',
       location: 'Daffodil Smart City, Birulia, Dhaka-1216',
     },
     {
@@ -48,7 +48,7 @@ export default function ScheduleSection() {
       title: 'Idea Poster Presentation',
       description: 'Showcase your research through engaging posters and get feedback from peers and mentors.',
       time: '11:30 AM - 12:45 PM',
-      date: 'December 11, 2025',
+      date: 'July 12, 2026',
       location: 'Daffodil Smart City, Birulia, Dhaka-1216',
     },
     {
@@ -56,7 +56,7 @@ export default function ScheduleSection() {
       title: 'Round Table Discussion',
       description: 'Engage with industry experts in a round table discussion on Industry-academia collaboration on AIs future role in Business.',
       time: '02:00 PM - 03:30 PM',
-      date: 'December 11, 2025',
+      date: 'July 12, 2026',
       location: 'Daffodil Smart City, Birulia, Dhaka-1216',
     },
     {
@@ -64,7 +64,7 @@ export default function ScheduleSection() {
       title: 'Closing Ceremony & Awards',
       description: 'Celebrate the conclusion of the event with a closing ceremony and awards for outstanding participants.',
       time: '03:30 PM - 04:00 PM',
-      date: 'December 11, 2025',
+      date: 'July 12, 2026',
       location: 'Daffodil Smart City, Birulia, Dhaka-1216',
     }
   ];
@@ -138,7 +138,7 @@ export default function ScheduleSection() {
         {/* Mobile Timeline Indicator */}
         <div className="lg:hidden mt-12 p-6 rounded-lg border border-cyan-500/30 bg-cyan-500/5 backdrop-blur-sm text-center">
           <p className="text-cyan-300 font-medium text-sm md:text-base">
-            ✨ All events happening on <span className="text-cyan-400 font-semibold">December 11, 2025</span>
+            ✨ All events happening on <span className="text-cyan-400 font-semibold">July 12, 2026</span>
           </p>
         </div>
       </div>

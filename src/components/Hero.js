@@ -33,8 +33,8 @@ export default function Hero() {
 
   useEffect(() => {
     const calculateTimeLeft = () => {
-      // Set target date to December 11, 2025 at midnight
-      const targetDate = new Date('2025-12-11T00:00:00').getTime();
+      // Set target date to July 12, 2026 at midnight
+      const targetDate = new Date('2026-07-12T00:00:00').getTime();
       const now = new Date().getTime();
       const difference = targetDate - now;
 
@@ -80,7 +80,7 @@ export default function Hero() {
             <svg className="w-5 h-5 text-cyan-400" fill="currentColor" viewBox="0 0 20 20">
               <path d="M6 2a1 1 0 011-1h6a1 1 0 011 1v2h4a2 2 0 012 2v10a2 2 0 01-2 2H2a2 2 0 01-2-2V6a2 2 0 012-2h4V2z" />
             </svg>
-            <span>December 11, 2025 | 9:00 AM - 5:00 PM</span>
+            <span>July 12, 2026 | 9:00 AM - 5:00 PM</span>
           </div>
           <div className="hidden sm:block w-0.5 h-4 bg-linear-to-b from-cyan-400 to-transparent opacity-50"></div>
           <div className="flex items-center gap-2">

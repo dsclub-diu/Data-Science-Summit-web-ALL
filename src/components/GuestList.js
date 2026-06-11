@@ -197,7 +197,7 @@ const GuestList = () => {
                         </div>
                     </div>
                     <p className="text-gray-300 text-lg md:text-xl max-w-3xl mx-auto leading-relaxed font-light">
-                        Meet our distinguished guests and speakers who will share their expertise and insights at the Data Science Summit 2025.
+                        Meet our distinguished guests and speakers who will share their expertise and insights at the Data Science Summit 2026.
                     </p>
                 </div>
 

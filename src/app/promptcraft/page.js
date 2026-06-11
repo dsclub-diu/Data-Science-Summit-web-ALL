@@ -11,7 +11,7 @@ export default function PromptcraftPage() {
         {/* Header */}
         <header className="text-center mb-12">
           <h1 className="text-4xl md:text-5xl font-extrabold text-white mb-2 tracking-tight">
-            🎬✨ PROMPT VIDEO MAKING CHALLENGE 2025 ✨🎬
+            🎬✨ PROMPT VIDEO MAKING CHALLENGE 2026 ✨🎬
           </h1>
           <p className="text-xl text-blue-400 font-semibold mb-3">
             🔥 Unleash Your Creativity. Craft Your Story. Inspire the Future. 🔥
@@ -22,7 +22,7 @@ export default function PromptcraftPage() {
 
           {/* MAIN REGISTRATION BUTTON */}
           <Link
-            href="https://docs.google.com/forms/d/e/1FAIpQLSfTP-TovwzsL4lks-GxRMyYZERPqMxzavkIbaN8JMVFZzM2Ag/viewform"
+            href="https://forms.gle/x7qVwQLmTUmD3hKc6"
             target="_blank"
             className="inline-block mt-8 px-10 py-4 text-xl font-bold text-white rounded-full shadow-lg bg-linear-to-r from-indigo-600 to-blue-600 hover:from-blue-600 hover:to-indigo-600 transform hover:scale-105 hover:-translate-y-0.5 transition-all duration-300 hover:shadow-blue-500/50"
             aria-label="Register for the Prompt Video Making Challenge"
@@ -241,7 +241,7 @@ export default function PromptcraftPage() {
               <p className="mb-2">
                 <span className="font-bold text-white block">Date & Time:</span>
                 <span className="mr-2 text-indigo-400">📅</span>
-                December 11, 2025 (12:30 PM – 1:30 PM)
+                July 12, 2026 (12:30 PM – 1:30 PM)
               </p>
               <p className="mb-2">
                 <span className="font-bold text-white block">Venue:</span>
@@ -253,7 +253,7 @@ export default function PromptcraftPage() {
               <p className="mb-2">
                 <span className="font-bold text-white block">Registration Deadline:</span>
                 <span className="mr-2 text-indigo-400">⏰</span>
-                <strong>December 5, 2025</strong>
+                <strong>June 25, 2026</strong>
               </p>
               <div className="text-center mt-4 md:text-left">
                 <p className="mb-2">
@@ -270,7 +270,7 @@ export default function PromptcraftPage() {
           {/* REGISTRATION BUTTON IN FOOTER SECTION */}
           <div className="mt-6 pt-4 border-t border-slate-700/50 text-center">
             <Link
-              href="https://docs.google.com/forms/d/e/1FAIpQLSfTP-TovwzsL4lks-GxRMyYZERPqMxzavkIbaN8JMVFZzM2Ag/viewform"
+              href="https://forms.gle/x7qVwQLmTUmD3hKc6"
               target="_blank"
               className="cta-button inline-block px-8 py-3 text-lg font-bold text-white rounded-lg shadow-xl"
               aria-label="Register Online via Registration Link"
@@ -282,7 +282,7 @@ export default function PromptcraftPage() {
           <div className="mt-6 p-4 bg-slate-700/40 rounded-lg border border-slate-600/50">
             <h3 className="font-bold text-white mb-2">Official Hashtags:</h3>
             <p className="text-sm text-slate-400 break-all">
-              #PromptVideoChallenge #DIUSummit2025 #CreateWithAI #StudentCreativity #InspireThroughVideo #DigitalCreators #InnovationBeginsHere #AIStorytelling #CraftYourPrompt #DIUEvents #CreatorMindset #FutureLeaders
+              #PromptVideoChallenge #DIUSummit2026 #CreateWithAI #StudentCreativity #InspireThroughVideo #DigitalCreators #InnovationBeginsHere #AIStorytelling #CraftYourPrompt #DIUEvents #CreatorMindset #FutureLeaders
             </p>
           </div>
         </div>

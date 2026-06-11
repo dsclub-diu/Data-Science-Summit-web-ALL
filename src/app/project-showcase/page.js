@@ -105,7 +105,7 @@ export default function ProjectShowcasePage() {
 
                             <div class="space-y-4 mb-10 text-base border-l-4 border-purple-500 pl-4">
                                 <p className="text-gray-300">
-                                    <span className="font-bold mr-2 text-purple-400">Summit:</span> 5th National Data Science Summit 2025
+                                    <span className="font-bold mr-2 text-purple-400">Summit:</span> 5th National Data Science Summit 2026
                                 </p>
                                 <p className="text-gray-300">
                                     <span className="font-bold mr-2 text-purple-400">Organized by:</span> Data Science Lab & Dept. of Software Engineering, DIU
@@ -138,10 +138,10 @@ export default function ProjectShowcasePage() {
 
                             {/* Registration & Deadline */}
                             <h3 className="text-2xl font-semibold mb-5 text-purple-400 border-b border-gray-700 pb-3">🗓️ Deadline & Registration</h3>
-                            <p className="text-xl font-extrabold text-red-400 mb-6 text-center tracking-wider">Deadline: Dec 5, 2025</p>
+                            <p className="text-xl font-extrabold text-red-400 mb-6 text-center tracking-wider">Deadline: Jun 25, 2026</p>
                             <p className="text-xl font-extrabold text-red-400 mb-6 text-center tracking-wider"> Fee: 1,000 BDT per team.</p>
                             <Link
-                                href="https://docs.google.com/forms/d/e/1FAIpQLSe7jPzg0uHjqGkNSl72LB5Jb4Vv_vtuVrKIZ490EH-HfocWxQ/viewform"
+                                href="https://forms.gle/Q16BjVQDSzij6Tc47"
                                 target="_blank"
                                 className="block w-full text-center py-4 rounded-xl bg-purple-600 hover:bg-purple-700 transition duration-300 font-extrabold text-white text-lg uppercase tracking-widest shadow-2xl hover:shadow-purple-500/20"
                             >

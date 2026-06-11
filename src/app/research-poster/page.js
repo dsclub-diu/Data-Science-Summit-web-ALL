@@ -60,7 +60,7 @@ export default function ResearchPosterPage() {
                                 <span className="inline-block px-4 py-1 mb-3 text-xs font-semibold tracking-wider text-slate-900 uppercase bg-cyan-400 rounded-full">Spotlight Event</span>
                                 <h2 className="text-3xl sm:text-4xl font-extrabold text-white mb-4 flex items-center justify-center">
                                     <Sparkles className="w-8 h-8 mr-3 text-yellow-400 fill-yellow-200" />
-                                    5th National Data Science Summit 2025
+                                    5th National Data Science Summit 2026
                                 </h2>
                                 <p className="text-xl font-bold text-cyan-300 mb-6">Theme: AI in Entrepreneurship</p>
                             </div>
@@ -69,7 +69,7 @@ export default function ResearchPosterPage() {
                                 {/* Date & Location */}
                                 <div className="p-4 bg-slate-700 rounded-lg shadow-md border-b-2 border-cyan-400">
                                     <Calendar className="w-6 h-6 mx-auto mb-2 text-cyan-400" />
-                                    <p className="font-semibold text-white">December 11, 2025 (09:00 am - 05:00 pm)</p>
+                                    <p className="font-semibold text-white">July 12, 2026 (09:00 am - 05:00 pm)</p>
                                     <p className="text-sm text-gray-300">Daffodil Smart City, Dhaka</p>
                                 </div>
 
@@ -103,7 +103,7 @@ export default function ResearchPosterPage() {
                                             <Timer className="w-5 h-5 mr-2 text-red-300" />
                                             <div className="text-left">
                                                 <div className="text-xs uppercase text-red-200/80">Submission Deadline</div>
-                                                <div className="font-bold text-red-300">December 5, 2025</div>
+                                                <div className="font-bold text-red-300">June 25, 2026</div>
                                             </div>
                                         </div>
                                     </div>
@@ -111,7 +111,7 @@ export default function ResearchPosterPage() {
 
                                 <div className="mt-6 flex flex-col sm:flex-row items-center gap-4">
                                     <a
-                                        href="https://docs.google.com/forms/d/e/1FAIpQLScEKI1gO_r05nAkxmEYm7D6vLvjoPjMPVCzZrF8EaVahmuX0Q/viewform"
+                                        href="https://forms.gle/gEdAtds8o9jN9bUV9"
                                         target="_blank"
                                         rel="noopener noreferrer"
                                         className="w-full sm:w-auto px-6 py-3 bg-linear-to-r from-cyan-400 to-blue-500 text-slate-900 font-semibold rounded-xl shadow-lg hover:from-cyan-300 hover:to-blue-400 transition"

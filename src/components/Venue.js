@@ -15,7 +15,7 @@ export default function VenueSection() {
                               </div>
                          </div>
                          <p className="text-gray-300 text-lg md:text-xl max-w-3xl mx-auto leading-relaxed font-light">
-                              Join us at Daffodil International University, Daffodil Smart City for the 5th National Data Science Summit 2025.
+                              Join us at Daffodil International University, Daffodil Smart City for the 5th National Data Science Summit 2026.
                          </p>
                     </div>
 
@@ -47,11 +47,11 @@ export default function VenueSection() {
                                                   </div>
                                                   <div className="flex-1">
                                                        <h3 className="text-lg font-bold text-white mb-3">
-                                                            December 11, 2025
+                                                            July 12, 2026
                                                        </h3>
                                                        <p className="text-gray-300 font-semibold flex items-center gap-2">
                                                             <Clock className="w-4 h-4" />
-                                                            Thursday 9AM - 5PM
+                                                            Sunday 9AM - 5PM
                                                        </p>
                                                   </div>
                                              </div>
@@ -88,7 +88,7 @@ export default function VenueSection() {
                                    <ul className="space-y-3 text-gray-300">
                                         <li className="flex items-start gap-3">
                                              <span className="text-cyan-400 font-bold">•</span>
-                                             <span>5th National Data Science Summit 2025</span>
+                                             <span>5th National Data Science Summit 2026</span>
                                         </li>
                                         <li className="flex items-start gap-3">
                                              <span className="text-cyan-400 font-bold">•</span>

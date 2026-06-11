@@ -22,7 +22,7 @@ export default function DataHackathonPage() {
                 <div className="bg-linear-to-br from-slate-800/40 to-slate-900/40 backdrop-blur-xl p-8 md:p-12 rounded-3xl border border-gray-700/50 shadow-2xl mb-16">
                     {/* Event Title and Theme */}
                     <h2 className="text-4xl md:text-5xl font-black text-white mb-2 text-center">
-                        5th National Data Science Summit 2025
+                        5th National Data Science Summit 2026
                     </h2>
                     <p className="text-xl md:text-2xl font-medium text-cyan-400 mb-6 text-center">
                         Hosted by Data Science Lab & Dept. of Software Engineering, DIU
@@ -35,7 +35,7 @@ export default function DataHackathonPage() {
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 text-center mb-10">
                         <div className="p-5 bg-slate-800/60 rounded-xl shadow-lg border-l-4 border-cyan-400">
                             <p className="text-sm text-gray-400 uppercase tracking-wider">Date</p>
-                            <p className="font-bold text-2xl text-white mt-1">📅 11 Dec 2025</p>
+                            <p className="font-bold text-2xl text-white mt-1">📅 12 Jul 2026</p>
                         </div>
                         <div className="p-5 bg-slate-800/60 rounded-xl shadow-lg border-l-4 border-cyan-400">
                             <p className="text-sm text-gray-400 uppercase tracking-wider">Time</p>
@@ -87,7 +87,7 @@ export default function DataHackathonPage() {
                             <div className="mt-auto">
                                 <p className="text-lg text-red-400 mb-3 font-bold">📌 Registration Fee: ৳1,200 per team</p>
                                 <Link
-                                    href="https://docs.google.com/forms/d/e/1FAIpQLSc58w2I2BFp4Mmt5uRC3ZYSTP4WZWttZJ_CoBKviUUCxkEWjg/viewform"
+                                    href="https://forms.gle/gRrD5czCCHp6pNMj6"
                                     target="_blank"
                                     className="w-full text-center block bg-linear-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white font-black py-4 px-6 rounded-xl transition-all duration-300 shadow-xl hover:shadow-2xl text-xl uppercase tracking-wider"
                                 >

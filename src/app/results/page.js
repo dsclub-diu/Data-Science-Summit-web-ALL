@@ -553,7 +553,7 @@ export default function LeaderboardPage() {
                             <Trophy className="w-16 h-16 text-cyan-400 ml-4" />
                         </div>
                         <p className="text-xl text-gray-300 mb-8">
-                            5th National Data Science Summit 2025 - Competition Results
+                            5th National Data Science Summit 2026 - Competition Results
                         </p>
                         <div className="flex items-center justify-center text-gray-400">
                             <Calendar className="w-5 h-5 mr-2" />
