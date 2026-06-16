@@ -557,7 +557,7 @@ export default function LeaderboardPage() {
                         </p>
                         <div className="flex items-center justify-center text-gray-400">
                             <Calendar className="w-5 h-5 mr-2" />
-                            <span>Updated: November 29, 2025</span>
+                            <span>Updated: June, 2026</span>
                         </div>
                     </motion.div>
                 </div>
