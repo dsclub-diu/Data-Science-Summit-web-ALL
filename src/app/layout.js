@@ -2,6 +2,7 @@ import { Poppins } from "next/font/google";
 import "./globals.css";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
+import { ThemeProvider } from "@/components/ThemeProvider";
 
 // Load Poppins font
 const poppins = Poppins({
@@ -11,35 +12,40 @@ const poppins = Poppins({
 });
 
 export const metadata = {
-  title: "5th National Data Science Summit 2026",
+  title: "5th National Data Science Summit 2026 | AI in Entrepreneurship",
   description:
-    "Join us for the 5th National Data Science Summit 2026 at Daffodil Smart City, Birulia, Savar, Dhaka. Explore the latest in AI and data science with industry experts and enthusiasts.",
-  keywords: ["Data Science", "AI", "Machine Learning", "Deep Learning", "Big Data", "Analytics", "Daffodil International University", "Data Science Summit 2026", "National Data Science Summit", "Dhaka", "Bangladesh", "Tech Event Dhaka", "DIU", "DS Club", "DIU DS Club"],
+    "5th National Data Science Summit 2026 — theme: AI in Entrepreneurship. ৳80,000 total prize pool. Join us July 12, 2026 at Daffodil Smart City, Birulia, Savar, Dhaka for hackathons, project showcases, and expert sessions.",
+  keywords: ["Data Science", "AI", "AI in Entrepreneurship", "Machine Learning", "Deep Learning", "Big Data", "Analytics", "Daffodil International University", "Data Science Summit 2026", "National Data Science Summit", "Dhaka", "Bangladesh", "Tech Event Dhaka", "DIU", "DS Club", "DIU DS Club", "80000 prize pool"],
 };
+
+// Runs before paint to prevent a theme flash. Default = dark.
+const themeScript = `
+(function() {
+  try {
+    var t = localStorage.getItem('dss-theme') || 'dark';
+    document.documentElement.setAttribute('data-theme', t);
+  } catch (e) {
+    document.documentElement.setAttribute('data-theme', 'dark');
+  }
+})();
+`;
 
 export default function RootLayout({ children }) {
   return (
-    <html lang="en">
+    <html lang="en" data-theme="dark" suppressHydrationWarning>
       <head>
         {/* Favicon */}
         <link rel="icon" href="/image.png" type="image/png" />
+        <script dangerouslySetInnerHTML={{ __html: themeScript }} />
       </head>
       <body
-        className={`${poppins.variable} antialiased min-h-screen w-full bg-[#020617] relative`}
-        style={{
-          background: "#020617",
-          backgroundImage: `
-            linear-gradient(to right, rgba(71,85,105,0.3) 1px, transparent 1px),
-            linear-gradient(to bottom, rgba(71,85,105,0.3) 1px, transparent 1px),
-            radial-gradient(circle at 50% 50%, rgba(139,92,246,0.08) 0%, transparent 70%)
-          `,
-          backgroundSize: "32px 32px, 32px 32px, 100% 100%",
-          backgroundAttachment: "fixed",
-        }}
+        className={`${poppins.variable} antialiased min-h-screen w-full relative`}
       >
-        <Navbar />
-        {children}
-        <Footer />
+        <ThemeProvider>
+          <Navbar />
+          {children}
+          <Footer />
+        </ThemeProvider>
       </body>
     </html>
   );

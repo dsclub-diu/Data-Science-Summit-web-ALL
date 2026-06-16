@@ -39,7 +39,7 @@ export default function OrganizersSection() {
   };
 
   return (
-    <section className="w-full py-24 md:py-32 px-4 relative z-10 bg-linear-to-b from-slate-950 via-slate-900 to-slate-950">
+    <section className="w-full py-24 md:py-32 px-4 relative z-10 bg-linear-to-b from-slate-50 via-white to-slate-50 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950">
       <div className="max-w-7xl mx-auto">
 
         {/* Organizers Section */}
@@ -48,7 +48,7 @@ export default function OrganizersSection() {
             <div className="inline-block mb-6">
               <div className="relative">
                 <div className="absolute -inset-2 bg-linear-to-r from-purple-600 via-blue-600 to-cyan-600 rounded-lg blur-xl opacity-30"></div>
-                <h2 className="relative text-5xl md:text-6xl lg:text-7xl font-bold text-white">
+                <h2 className="relative text-5xl md:text-6xl lg:text-7xl font-bold text-slate-900 dark:text-white">
                   Organizers
                 </h2>
               </div>
@@ -71,7 +71,7 @@ export default function OrganizersSection() {
                     height={200}
                     className="mx-auto object-contain"
                   />
-                  <p className="text-gray-300 font-semibold">{org.name}</p>
+                  <p className="text-slate-600 dark:text-gray-300 font-semibold">{org.name}</p>
                 </div>
               </div>
             ))}
@@ -85,7 +85,7 @@ export default function OrganizersSection() {
             <div className="inline-block mb-6">
               <div className="relative">
                 <div className="absolute -inset-2 bg-linear-to-r from-purple-600 via-blue-600 to-cyan-600 rounded-lg blur-xl opacity-30"></div>
-                <h2 className="relative text-5xl md:text-6xl lg:text-7xl font-bold text-white">
+                <h2 className="relative text-5xl md:text-6xl lg:text-7xl font-bold text-slate-900 dark:text-white">
                   Partners
                 </h2>
               </div>
@@ -108,7 +108,7 @@ export default function OrganizersSection() {
                     height={200}
                     className="mx-auto mb-2 object-contain"
                   />
-                  <p className="text-gray-300 font-semibold text-xs md:text-sm">{media.name}</p>
+                  <p className="text-slate-600 dark:text-gray-300 font-semibold text-xs md:text-sm">{media.name}</p>
                 </div>
               </div>
             ))}

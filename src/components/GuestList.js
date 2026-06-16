@@ -112,7 +112,7 @@ const GuestCard = ({ guest }) => {
     const { name, img, designation, organization } = guest;
 
     return (
-        <div className="group relative w-80 rounded-2xl border border-gray-700/50 bg-linear-to-br from-slate-800/40 to-slate-900/40 backdrop-blur-xl overflow-hidden transition-all duration-300 hover:border-cyan-500/50 flex flex-col">
+        <div className="group relative w-80 rounded-2xl border border-slate-200 dark:border-gray-700/50 bg-white dark:bg-linear-to-br dark:from-slate-800/40 dark:to-slate-900/40 backdrop-blur-xl overflow-hidden transition-all duration-300 hover:border-cyan-500/50 hover:shadow-lg hover:shadow-cyan-500/10 flex flex-col">
             {/* Background Effect */}
             <div className="absolute inset-0 bg-linear-to-br from-cyan-500/5 to-purple-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
 
@@ -124,7 +124,7 @@ const GuestCard = ({ guest }) => {
                         width={280}
                         height={280}
                         alt={name}
-                        className="w-56 h-56 object-cover rounded-xl border-2 border-gray-700/30 group-hover:border-cyan-500/50 transition-all duration-300"
+                        className="w-56 h-56 object-cover rounded-xl border-2 border-slate-200 dark:border-gray-700/30 group-hover:border-cyan-500/50 transition-all duration-300"
                     />
                 </div>
             </div>
@@ -133,17 +133,17 @@ const GuestCard = ({ guest }) => {
             <div className="relative p-6 pt-2 flex flex-col justify-between flex-1 text-center min-h-[140px]">
                 {/* Name - Fixed height with line clamping */}
                 <div className="mb-2">
-                    <h3 className="text-lg font-bold text-white group-hover:text-cyan-300 transition-colors duration-300 line-clamp-2 leading-tight min-h-14">
+                    <h3 className="text-lg font-bold text-slate-900 dark:text-white group-hover:text-cyan-600 dark:group-hover:text-cyan-300 transition-colors duration-300 line-clamp-2 leading-tight min-h-14">
                         {name}
                     </h3>
                 </div>
 
                 {/* Designation and Organization */}
                 <div className="space-y-1">
-                    <p className="text-sm text-cyan-400 font-medium leading-relaxed">
+                    <p className="text-sm text-cyan-600 dark:text-cyan-400 font-medium leading-relaxed">
                         {designation}
                     </p>
-                    <p className="text-sm text-gray-300 italic">
+                    <p className="text-sm text-slate-500 dark:text-gray-300 italic">
                         {organization}
                     </p>
                 </div>
@@ -162,7 +162,7 @@ const GuestList = () => {
     return (
         <section
             id="guests"
-            className="w-full py-24 md:py-32 px-4 relative z-10 bg-linear-to-b from-slate-950 via-slate-900 to-slate-950"
+            className="w-full py-24 md:py-32 px-4 relative z-10 bg-linear-to-b from-slate-50 via-white to-slate-50 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950"
         >
             <div className="max-w-7xl mx-auto">
                 {/* Main Title */}
@@ -170,12 +170,12 @@ const GuestList = () => {
                     <div className="inline-block mb-6">
                         <div className="relative">
                             <div className="absolute -inset-2 bg-linear-to-r from-purple-600 via-blue-600 to-cyan-600 rounded-lg blur-xl opacity-30"></div>
-                            <h2 className="relative text-5xl md:text-6xl lg:text-7xl font-bold text-white">
+                            <h2 className="relative text-5xl md:text-6xl lg:text-7xl font-bold text-slate-900 dark:text-white">
                                 Guests
                             </h2>
                         </div>
                     </div>
-                    <p className="text-gray-300 text-lg md:text-xl max-w-3xl mx-auto leading-relaxed font-light">
+                    <p className="text-slate-600 dark:text-gray-300 text-lg md:text-xl max-w-3xl mx-auto leading-relaxed font-light">
                         Meet our distinguished guests and speakers who will share their expertise and insights at the Data Science Summit 2026.
                     </p>
                 </div>

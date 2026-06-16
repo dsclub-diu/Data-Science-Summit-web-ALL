@@ -76,7 +76,7 @@ export default function PreviousSummitsSection() {
         const imageName = summit.images[currentIndex];
 
         return (
-            <div className="relative w-full h-72 bg-slate-800 overflow-hidden rounded-t-xl">
+            <div className="relative w-full h-72 bg-slate-200 dark:bg-slate-800 overflow-hidden rounded-t-xl">
                 <Image
                     src={`/${imageName}`}
                     alt={summit.title}
@@ -124,12 +124,12 @@ export default function PreviousSummitsSection() {
                     <div className="inline-block mb-6">
                         <div className="relative">
                             <div className="absolute -inset-2 bg-linear-to-r from-purple-600 via-blue-600 to-cyan-600 rounded-lg blur-xl opacity-30"></div>
-                            <h2 className="relative text-5xl md:text-6xl lg:text-7xl font-bold text-white">
+                            <h2 className="relative text-5xl md:text-6xl lg:text-7xl font-bold text-slate-900 dark:text-white">
                                 Previous Summits
                             </h2>
                         </div>
                     </div>
-                    <p className="text-gray-400 text-lg mt-6">Journey through our past Data Science Summits</p>
+                    <p className="text-slate-500 dark:text-gray-400 text-lg mt-6">Journey through our past Data Science Summits</p>
                 </div>
 
                 {/* Desktop */}
@@ -143,27 +143,27 @@ export default function PreviousSummitsSection() {
                                 {/* LEFT */}
                                 <div className="w-1/2 pr-12">
                                     {idx % 2 !== 0 && (
-                                        <div className="group relative rounded-xl border border-cyan-500/30 bg-linear-to-br from-slate-800/40 to-slate-900/40 backdrop-blur-xl overflow-hidden hover:border-cyan-500/60 hover:shadow-cyan-500/20 shadow-lg">
+                                        <div className="group relative rounded-xl border border-cyan-500/30 bg-white dark:bg-linear-to-br dark:from-slate-800/40 dark:to-slate-900/40 backdrop-blur-xl overflow-hidden hover:border-cyan-500/60 hover:shadow-cyan-500/20 shadow-lg">
 
                                             <ImageGallery summit={summit} />
 
                                             <div className="p-6 relative text-right">
-                                                <h3 className="text-2xl text-white font-bold mb-2">{summit.title}</h3>
-                                                <p className="text-sm text-cyan-400 mb-3">{summit.date}, {summit.year}</p>
-                                                <p className="text-gray-300 text-sm mb-6">{summit.description}</p>
+                                                <h3 className="text-2xl text-slate-900 dark:text-white font-bold mb-2">{summit.title}</h3>
+                                                <p className="text-sm text-cyan-600 dark:text-cyan-400 mb-3">{summit.date}, {summit.year}</p>
+                                                <p className="text-slate-600 dark:text-gray-300 text-sm mb-6">{summit.description}</p>
 
                                                 <div className="flex gap-6 justify-end">
                                                     <div>
-                                                        <p className="text-2xl text-cyan-400 font-bold">{summit.stats.participants}</p>
-                                                        <p className="text-xs text-gray-400">Participants</p>
+                                                        <p className="text-2xl text-cyan-600 dark:text-cyan-400 font-bold">{summit.stats.participants}</p>
+                                                        <p className="text-xs text-slate-500 dark:text-gray-400">Participants</p>
                                                     </div>
                                                     <div>
-                                                        <p className="text-2xl text-purple-400 font-bold">{summit.stats.speakers}</p>
-                                                        <p className="text-xs text-gray-400">Speakers</p>
+                                                        <p className="text-2xl text-purple-600 dark:text-purple-400 font-bold">{summit.stats.speakers}</p>
+                                                        <p className="text-xs text-slate-500 dark:text-gray-400">Speakers</p>
                                                     </div>
                                                     <div>
-                                                        <p className="text-2xl text-blue-400 font-bold">{summit.stats.sessions}</p>
-                                                        <p className="text-xs text-gray-400">Sessions</p>
+                                                        <p className="text-2xl text-blue-600 dark:text-blue-400 font-bold">{summit.stats.sessions}</p>
+                                                        <p className="text-xs text-slate-500 dark:text-gray-400">Sessions</p>
                                                     </div>
                                                 </div>
                                             </div>
@@ -173,33 +173,33 @@ export default function PreviousSummitsSection() {
 
                                 {/* DOT */}
                                 <div className="w-auto flex justify-center">
-                                    <div className="w-5 h-5 rounded-full bg-cyan-400 shadow-lg ring-4 ring-slate-950"></div>
+                                    <div className="w-5 h-5 rounded-full bg-cyan-400 shadow-lg ring-4 ring-white dark:ring-slate-950"></div>
                                 </div>
 
                                 {/* RIGHT */}
                                 <div className="w-1/2 pl-12">
                                     {idx % 2 === 0 && (
-                                        <div className="group relative rounded-xl border border-cyan-500/30 bg-linear-to-br from-slate-800/40 to-slate-900/40 backdrop-blur-xl overflow-hidden hover:border-cyan-500/60 hover:shadow-cyan-500/20 shadow-lg">
+                                        <div className="group relative rounded-xl border border-cyan-500/30 bg-white dark:bg-linear-to-br dark:from-slate-800/40 dark:to-slate-900/40 backdrop-blur-xl overflow-hidden hover:border-cyan-500/60 hover:shadow-cyan-500/20 shadow-lg">
 
                                             <ImageGallery summit={summit} />
 
                                             <div className="p-6 relative">
-                                                <h3 className="text-2xl text-white font-bold mb-2">{summit.title}</h3>
-                                                <p className="text-sm text-cyan-400 mb-3">{summit.date}, {summit.year}</p>
-                                                <p className="text-gray-300 text-sm mb-6">{summit.description}</p>
+                                                <h3 className="text-2xl text-slate-900 dark:text-white font-bold mb-2">{summit.title}</h3>
+                                                <p className="text-sm text-cyan-600 dark:text-cyan-400 mb-3">{summit.date}, {summit.year}</p>
+                                                <p className="text-slate-600 dark:text-gray-300 text-sm mb-6">{summit.description}</p>
 
                                                 <div className="flex gap-6">
                                                     <div>
-                                                        <p className="text-2xl text-cyan-400 font-bold">{summit.stats.participants}</p>
-                                                        <p className="text-xs text-gray-400">Participants</p>
+                                                        <p className="text-2xl text-cyan-600 dark:text-cyan-400 font-bold">{summit.stats.participants}</p>
+                                                        <p className="text-xs text-slate-500 dark:text-gray-400">Participants</p>
                                                     </div>
                                                     <div>
-                                                        <p className="text-2xl text-purple-400 font-bold">{summit.stats.speakers}</p>
-                                                        <p className="text-xs text-gray-400">Speakers</p>
+                                                        <p className="text-2xl text-purple-600 dark:text-purple-400 font-bold">{summit.stats.speakers}</p>
+                                                        <p className="text-xs text-slate-500 dark:text-gray-400">Speakers</p>
                                                     </div>
                                                     <div>
-                                                        <p className="text-2xl text-blue-400 font-bold">{summit.stats.sessions}</p>
-                                                        <p className="text-xs text-gray-400">Sessions</p>
+                                                        <p className="text-2xl text-blue-600 dark:text-blue-400 font-bold">{summit.stats.sessions}</p>
+                                                        <p className="text-xs text-slate-500 dark:text-gray-400">Sessions</p>
                                                     </div>
                                                 </div>
                                             </div>
@@ -216,7 +216,7 @@ export default function PreviousSummitsSection() {
                     {summits.map((summit) => (
                         <div key={summit.id}>
                             <div
-                                className="w-full group relative rounded-xl border border-cyan-500/30 bg-linear-to-br from-slate-800/40 to-slate-900/40 backdrop-blur-xl overflow-hidden hover:border-cyan-500/60 hover:shadow-cyan-500/20 transition-all"
+                                className="w-full group relative rounded-xl border border-cyan-500/30 bg-white dark:bg-linear-to-br dark:from-slate-800/40 dark:to-slate-900/40 backdrop-blur-xl overflow-hidden hover:border-cyan-500/60 hover:shadow-cyan-500/20 transition-all"
                             >
                                 {/* CLICKABLE HEADER */}
                                 <div onClick={() => toggleSummit(summit.id)} className="cursor-pointer">
@@ -224,8 +224,8 @@ export default function PreviousSummitsSection() {
 
                                     <div className="relative p-4 flex justify-between items-start">
                                         <div>
-                                            <h3 className="text-lg font-bold text-white mb-1">{summit.title}</h3>
-                                            <p className="text-sm text-cyan-400">{summit.date}, {summit.year}</p>
+                                            <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-1">{summit.title}</h3>
+                                            <p className="text-sm text-cyan-600 dark:text-cyan-400">{summit.date}, {summit.year}</p>
                                         </div>
                                         <ChevronDown
                                             size={24}
@@ -237,21 +237,21 @@ export default function PreviousSummitsSection() {
 
                             {/* EXPANDED CONTENT */}
                             {expandedSummit === summit.id && (
-                                <div className="mt-2 rounded-xl border border-cyan-500/20 bg-linear-to-br from-slate-800/30 to-slate-900/30 p-5">
-                                    <p className="text-gray-300 text-sm mb-6">{summit.description}</p>
+                                <div className="mt-2 rounded-xl border border-slate-200 dark:border-cyan-500/20 bg-white dark:bg-linear-to-br dark:from-slate-800/30 dark:to-slate-900/30 p-5">
+                                    <p className="text-slate-600 dark:text-gray-300 text-sm mb-6">{summit.description}</p>
 
                                     <div className="grid grid-cols-3 gap-4">
                                         <div className="text-center">
-                                            <p className="text-xl font-bold text-cyan-400">{summit.stats.participants}</p>
-                                            <p className="text-xs text-gray-400">Participants</p>
+                                            <p className="text-xl font-bold text-cyan-600 dark:text-cyan-400">{summit.stats.participants}</p>
+                                            <p className="text-xs text-slate-500 dark:text-gray-400">Participants</p>
                                         </div>
                                         <div className="text-center">
-                                            <p className="text-xl font-bold text-purple-400">{summit.stats.speakers}</p>
-                                            <p className="text-xs text-gray-400">Speakers</p>
+                                            <p className="text-xl font-bold text-purple-600 dark:text-purple-400">{summit.stats.speakers}</p>
+                                            <p className="text-xs text-slate-500 dark:text-gray-400">Speakers</p>
                                         </div>
                                         <div className="text-center">
-                                            <p className="text-xl font-bold text-blue-400">{summit.stats.sessions}</p>
-                                            <p className="text-xs text-gray-400">Sessions</p>
+                                            <p className="text-xl font-bold text-blue-600 dark:text-blue-400">{summit.stats.sessions}</p>
+                                            <p className="text-xs text-slate-500 dark:text-gray-400">Sessions</p>
                                         </div>
                                     </div>
                                 </div>

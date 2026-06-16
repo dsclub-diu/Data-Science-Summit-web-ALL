@@ -168,7 +168,7 @@ export default function EventsSection() {
     <>
       <section
         id="events"
-        className="w-full py-24 md:py-32 px-4 relative z-10 bg-linear-to-b from-slate-950 via-slate-900 to-slate-950"
+        className="w-full py-24 md:py-32 px-4 relative z-10 bg-linear-to-b from-slate-50 via-white to-slate-50 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950"
       >
         <div className="max-w-7xl mx-auto">
           {/* Section Header */}
@@ -176,12 +176,12 @@ export default function EventsSection() {
             <div className="inline-block mb-6">
               <div className="relative">
                 <div className="absolute -inset-2 bg-linear-to-r from-cyan-600 via-blue-600 to-purple-600 rounded-lg blur-xl opacity-30"></div>
-                <h2 className="relative text-5xl md:text-6xl lg:text-7xl font-bold text-white">
+                <h2 className="relative text-5xl md:text-6xl lg:text-7xl font-bold text-slate-900 dark:text-white">
                   Events
                 </h2>
               </div>
             </div>
-            <p className="text-gray-300 text-lg md:text-xl max-w-3xl mx-auto leading-relaxed font-light">
+            <p className="text-slate-600 dark:text-gray-300 text-lg md:text-xl max-w-3xl mx-auto leading-relaxed font-light">
               Join us for events that fuel creativity, innovation, and growth. Share your ideas, dive into expert-led sessions, tackle challenges, and showcase your projects.
             </p>
           </div>
@@ -191,14 +191,14 @@ export default function EventsSection() {
             {events.map((event, idx) => (
               <div
                 key={event.id}
-                className={`group relative rounded-2xl border border-gray-700/50 bg-linear-to-br from-slate-800/40 to-slate-900/40 backdrop-blur-xl overflow-hidden transition-all duration-300 hover:border-cyan-500/50 flex flex-col h-full ${idx === 3 || idx === 4 ? 'md:col-span-2 lg:col-span-1 mx-auto' : ''
+                className={`group relative rounded-2xl border border-slate-200 dark:border-gray-700/50 bg-white dark:bg-linear-to-br dark:from-slate-800/40 dark:to-slate-900/40 backdrop-blur-xl overflow-hidden transition-all duration-300 hover:border-cyan-500/50 flex flex-col h-full ${idx === 3 || idx === 4 ? 'md:col-span-2 lg:col-span-1 mx-auto' : ''
                   }`}
               >
                 {/* linear Background Effect */}
                 <div className="absolute inset-0 bg-linear-to-br from-cyan-500/5 to-purple-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
 
                 {/* Logo Section */}
-                <div className="relative px-8 md:px-8 pt-6 pb-4 border-b border-gray-700/30">
+                <div className="relative px-8 md:px-8 pt-6 pb-4 border-b border-slate-200 dark:border-gray-700/30">
                   <Image
                     src="/dss-logo.svg"
                     alt="DSS Logo"
@@ -211,30 +211,30 @@ export default function EventsSection() {
                 {/* Content */}
                 <div className="relative p-8 md:p-8 flex flex-col flex-1">
                   {/* Title */}
-                  <h3 className="text-2xl md:text-2xl font-bold text-white mb-3 group-hover:text-cyan-300 transition-colors duration-300">
+                  <h3 className="text-2xl md:text-2xl font-bold text-slate-900 dark:text-white mb-3 group-hover:text-cyan-300 transition-colors duration-300">
                     {event.title}
                   </h3>
 
                   {/* Description */}
-                  <p className="text-gray-400 text-sm leading-relaxed mb-6 grow">
+                  <p className="text-slate-500 dark:text-gray-400 text-sm leading-relaxed mb-6 grow">
                     {event.description}
                   </p>
 
                   {/* Info Details */}
                   <div className="space-y-2.5 mb-6">
-                    <div className="flex items-center gap-2 text-gray-400 text-xs md:text-sm">
+                    <div className="flex items-center gap-2 text-slate-500 dark:text-gray-400 text-xs md:text-sm">
                       <svg className="w-4 h-4 text-cyan-400" fill="currentColor" viewBox="0 0 20 20">
                         <path d="M6 2a1 1 0 011-1h6a1 1 0 011 1v2h4a2 2 0 012 2v10a2 2 0 01-2 2H2a2 2 0 01-2-2V6a2 2 0 012-2h4V2z" />
                       </svg>
                       <span>{event.date}</span>
                     </div>
-                    <div className="flex items-center gap-2 text-gray-400 text-xs md:text-sm">
+                    <div className="flex items-center gap-2 text-slate-500 dark:text-gray-400 text-xs md:text-sm">
                       <svg className="w-4 h-4 text-cyan-400" fill="currentColor" viewBox="0 0 20 20">
                         <path fillRule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clipRule="evenodd" />
                       </svg>
                       <span>{event.location}</span>
                     </div>
-                    <div className="flex items-center gap-2 text-gray-400 text-xs md:text-sm">
+                    <div className="flex items-center gap-2 text-slate-500 dark:text-gray-400 text-xs md:text-sm">
                       <svg className="w-4 h-4 text-cyan-400" fill="currentColor" viewBox="0 0 20 20">
                         <path d="M10 12a2 2 0 100-4 2 2 0 000 4z" />
                         <path fillRule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clipRule="evenodd" />
@@ -256,7 +256,7 @@ export default function EventsSection() {
                   </div>
 
                   {/* Buttons - Pushed to Bottom */}
-                  <div className="flex gap-3 mt-auto pt-6 border-t border-gray-700/30">
+                  <div className="flex gap-3 mt-auto pt-6 border-t border-slate-200 dark:border-gray-700/30">
                     <a
                       href={event.registerLink}
                       target="_blank"
@@ -291,7 +291,7 @@ export default function EventsSection() {
       {/* Modal - Only for Hands-On Workshop */}
       {selectedEvent && selectedEvent.id === 4 && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm ">
-          <div className="relative w-full max-w-2xl max-h-[90vh] bg-linear-to-br from-slate-800 to-slate-900 rounded-lg  border border-cyan-500/30 shadow-2xl shadow-cyan-500/20 overflow-y-scroll no-scrollbar">
+          <div className="relative w-full max-w-2xl max-h-[90vh] bg-white dark:bg-linear-to-br dark:from-slate-800 dark:to-slate-900 rounded-lg  border border-slate-200 dark:border-cyan-500/30 shadow-2xl shadow-cyan-500/20 overflow-y-scroll no-scrollbar">
             {/* Close Button */}
             <button
               onClick={() => setSelectedEvent(null)}
@@ -305,7 +305,7 @@ export default function EventsSection() {
               {/* Header */}
               <div className="mb-8 mt-5 md:mt-0">
 
-                <h2 className="text-3xl md:text-4xl font-bold text-white mb-2">{selectedEvent.title}</h2>
+                <h2 className="text-3xl md:text-4xl font-bold text-slate-900 dark:text-white mb-2">{selectedEvent.title}</h2>
                 <div className="flex flex-wrap gap-2 mb-6">
                   {selectedEvent.tags.map((tag, idx) => (
                     <span
@@ -319,27 +319,27 @@ export default function EventsSection() {
               </div>
 
               {/* Event Details Grid */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8 pb-8 border-b border-gray-700/50">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8 pb-8 border-b border-slate-200 dark:border-gray-700/50">
                 <div>
                   <p className="text-cyan-400 font-semibold mb-1 text-sm">Date</p>
-                  <p className="text-gray-100 text-lg">{selectedEvent.date}</p>
+                  <p className="text-slate-800 dark:text-gray-100 text-lg">{selectedEvent.date}</p>
                 </div>
                 <div>
                   <p className="text-cyan-400 font-semibold mb-1 text-sm">Time</p>
-                  <p className="text-gray-100 text-lg">{selectedEvent.time}</p>
+                  <p className="text-slate-800 dark:text-gray-100 text-lg">{selectedEvent.time}</p>
                 </div>
                 <div className="md:col-span-2">
                   <p className="text-cyan-400 font-semibold mb-1 text-sm">Location</p>
-                  <p className="text-gray-100">{selectedEvent.location}</p>
+                  <p className="text-slate-800 dark:text-gray-100">{selectedEvent.location}</p>
                 </div>
               </div>
 
               {/* Why Join */}
               <div className="mb-8">
-                <h3 className="text-xl font-bold text-white mb-4">Why Join?</h3>
+                <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-4">Why Join?</h3>
                 <ul className="space-y-2">
                   {selectedEvent.whyJoin.map((item, idx) => (
-                    <li key={idx} className="flex gap-2 text-gray-300">
+                    <li key={idx} className="flex gap-2 text-slate-600 dark:text-gray-300">
                       <span className="text-cyan-400 font-bold">•</span>
                       <span>{item}</span>
                     </li>
@@ -348,26 +348,26 @@ export default function EventsSection() {
               </div>
 
               {/* Registration & Prize Info */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8 pb-8 border-b border-gray-700/50">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8 pb-8 border-b border-slate-200 dark:border-gray-700/50">
                 <div>
-                  <h3 className="text-lg font-bold text-white mb-3">Registration</h3>
+                  <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-3">Registration</h3>
                   <p className="text-cyan-300 mb-4">{selectedEvent.registrationFee}</p>
-                  <p className="text-sm text-gray-400">
-                    <span className="font-semibold text-gray-300">Team Size: </span>
+                  <p className="text-sm text-slate-500 dark:text-gray-400">
+                    <span className="font-semibold text-slate-600 dark:text-gray-300">Team Size: </span>
                     {selectedEvent.teamSize}
                   </p>
-                  <p className="text-sm text-gray-400 mt-2">
-                    <span className="font-semibold text-gray-300">Eligibility: </span>
+                  <p className="text-sm text-slate-500 dark:text-gray-400 mt-2">
+                    <span className="font-semibold text-slate-600 dark:text-gray-300">Eligibility: </span>
                     {selectedEvent.eligibility}
                   </p>
                 </div>
 
                 {selectedEvent.prizes.length > 0 && (
                   <div>
-                    <h3 className="text-lg font-bold text-white mb-3">🏆 Prizes</h3>
+                    <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-3">🏆 Prizes</h3>
                     <div className="space-y-2 mb-3">
                       {selectedEvent.prizes.map((prize, idx) => (
-                        <p key={idx} className="text-gray-300">
+                        <p key={idx} className="text-slate-600 dark:text-gray-300">
                           <span className="text-cyan-300 font-semibold">{prize.place}:</span> {prize.amount}
                         </p>
                       ))}
@@ -379,7 +379,7 @@ export default function EventsSection() {
 
               {/* Perks */}
               <div className="mb-8">
-                <h3 className="text-lg font-bold text-white mb-3">What You&apos;ll Get</h3>
+                <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-3">What You&apos;ll Get</h3>
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
                   {selectedEvent.perks.map((perk, idx) => (
                     <div key={idx} className="bg-cyan-500/10 border border-cyan-500/30 rounded-lg p-3 text-center">
