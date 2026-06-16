@@ -60,27 +60,6 @@ const guests = [
         organization: "Daffodil International University",
         category: "special",
     },
-    {
-        name: "Dr. Abdus Sattar",
-        img: "/guests/abdus-sattar.png",
-        designation: "Associate Professor & Director, M.Sc in CSE",
-        organization: "Daffodil International University",
-        category: "special",
-    },
-    {
-        name: "Mr. Md. Khaled Sohel",
-        img: "/guests/sohel.png",
-        designation: "Assistant Professor of Software Engineering Department",
-        organization: "Daffodil International University",
-        category: "special",
-    },
-    {
-        name: "Nuruzzaman Faruqui",
-        img: "/guests/nuruzzaman.png",
-        designation: "Assistant Professor of Software Engineering Department",
-        organization: "Daffodil International University",
-        category: "special",
-    },
 
     // Keynote Speaker
     {
