@@ -215,6 +215,9 @@ async def worker_result(payload: dict, x_worker_token: str = Header(None)):
         raise HTTPException(status_code=404, detail="unknown submission_id")
     meta = _read_meta(sid)
     payload.setdefault("team", meta["team"])
+    # Recreate the results dir in case it was wiped at runtime (e.g. clearing
+    # test data without restarting) so a result write can never 500.
+    RESULTS_DIR.mkdir(parents=True, exist_ok=True)
     (RESULTS_DIR / f"{sid}.json").write_text(json.dumps(payload, indent=2))
     meta["status"] = "error" if "EVALUATION_ERROR" in " ".join(
         payload.get("flags", [])) else "done"
