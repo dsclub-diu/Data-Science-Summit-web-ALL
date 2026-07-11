@@ -55,16 +55,30 @@ def set_resource_limits(mem_mb, cpu_seconds):
 
 
 def load_model(model_bytes):
-    """Deserialize a submitted model. Tries joblib first because joblib.dump
-    is the standard way to persist sklearn/xgboost models (and the only way
-    to compress them, which the size score rewards); joblib.load also reads
-    plain pickles. Falls back to stdlib pickle if joblib is unavailable."""
+    """Deserialize a submitted model, tolerating the common ways teams save
+    them: plain pickle, joblib (including joblib's own compression), and a
+    pickle wrapped in a standard compressor (zlib/gzip/bz2/lzma). This avoids
+    'invalid load key' errors when a model was saved compressed."""
+    import io
+    # 1. joblib reads joblib dumps AND plain pickles, and self-decompresses.
     try:
-        import io
         import joblib
         return joblib.load(io.BytesIO(model_bytes))
-    except ImportError:
-        return pickle.loads(model_bytes)
+    except Exception:
+        pass
+    # 2. Try transparent decompression, then pickle.
+    import bz2
+    import gzip
+    import lzma
+    import zlib
+    for decompress in (lambda b: b, gzip.decompress, zlib.decompress,
+                       bz2.decompress, lzma.decompress):
+        try:
+            return pickle.loads(decompress(model_bytes))
+        except Exception:
+            continue
+    # 3. Last resort: raw pickle, so the real error is surfaced.
+    return pickle.loads(model_bytes)
 
 
 def to_label_list(pred, n_expected):
