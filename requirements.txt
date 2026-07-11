@@ -18,7 +18,7 @@ requests==2.32.5
 numpy==2.4.0
 pandas==2.3.3
 scipy==1.18.0
-scikit-learn==1.9.0
+scikit-learn==1.6.1     # match Google Colab so teams' models load (was 1.9.0)
 joblib==1.5.3
 xgboost==2.1.3
 lightgbm==4.5.0
