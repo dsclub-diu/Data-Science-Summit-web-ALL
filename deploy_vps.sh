@@ -26,10 +26,14 @@ echo "==> repo:   $REPO_DIR"
 echo "==> domain: $DOMAIN"
 echo "==> origin: $ALLOWED_ORIGINS"
 
-if [ ! -x "$VENV/bin/uvicorn" ]; then
-  echo "ERROR: $VENV/bin/uvicorn not found — create the venv and install deps first."
-  exit 1
+# --- Python environment: create the venv and install pinned deps -----------
+if [ ! -d "$VENV" ]; then
+  echo "==> creating virtualenv ..."
+  python3 -m venv "$VENV"
 fi
+echo "==> installing/updating dependencies from requirements.txt ..."
+"$VENV/bin/pip" install -q --upgrade pip
+"$VENV/bin/pip" install -q -r "$REPO_DIR/requirements.txt"
 
 # --- stop any leftover foreground/background test processes -----------------
 pkill -f "uvicorn portal:app" 2>/dev/null || true

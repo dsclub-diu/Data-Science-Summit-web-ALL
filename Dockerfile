@@ -1,19 +1,12 @@
 # Isolated judging environment for the Starship Safety hackathon.
-# Install every library participants are allowed to use, with pinned
-# versions, and PUBLISH THIS LIST to participants — a pickle saved under a
-# different sklearn/xgboost version may fail to load here. joblib is included
-# because it is the standard way to save/compress sklearn models.
+# Dependencies (and their pinned versions) live in requirements.txt, which is
+# the single source of truth for both the judge and the versions participants
+# must build against. joblib is included because models are saved with it.
 FROM python:3.11-slim
 
-RUN pip install --no-cache-dir \
-    pandas==2.2.3 \
-    numpy==2.1.3 \
-    scikit-learn==1.6.1 \
-    joblib==1.4.2 \
-    xgboost==2.1.3 \
-    lightgbm==4.5.0
-
 WORKDIR /hackathon/judging
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
 
 # Mount the project at runtime and run from the project root; see README.md:
 #   docker run --rm --network none --cpus 2 --memory 4g \
