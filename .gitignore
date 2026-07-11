@@ -12,6 +12,11 @@ data/
 *.joblib
 *.pkl
 
+# secrets
+dsummit_ed25519*
+*_ed25519*
+*.pem
+
 # misc
 .DS_Store
 *.pdf

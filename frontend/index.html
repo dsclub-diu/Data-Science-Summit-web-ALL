@@ -85,7 +85,7 @@
 </div>
 
 <script>
-const API = localStorage.getItem('apiBase') || 'http://localhost:8000';
+const API = localStorage.getItem('apiBase') || `http://${location.hostname || 'localhost'}:${location.hostname === 'localhost' || !location.hostname ? 8000 : 8001}`;
 const $ = id => document.getElementById(id);
 const fmt = (v, d=4) => v == null ? '—' : Number(v).toFixed(d);
 
