@@ -106,9 +106,14 @@ fi
 # --- Caddy: automatic HTTPS -------------------------------------------------
 if ! command -v caddy >/dev/null 2>&1; then
   echo "==> installing Caddy ..."
-  apt install -y debian-keyring debian-archive-keyring apt-transport-https curl
-  curl -1sLf 'https://dl.cloudsmith.io/public/caddy/stable/gpg.key' \
-    | gpg --dearmor -o /usr/share/keyrings/caddy-stable-archive-keyring.gpg
+  apt install -y debian-keyring debian-archive-keyring apt-transport-https curl gnupg
+  # Download the signing key to a FILE first, then dearmor it. Piping the
+  # download straight into gpg can silently leave an empty keyring, which
+  # causes the NO_PUBKEY error on apt update.
+  curl -1sLf 'https://dl.cloudsmith.io/public/caddy/stable/gpg.key' -o /tmp/caddy-gpg.key
+  gpg --batch --yes --dearmor \
+    -o /usr/share/keyrings/caddy-stable-archive-keyring.gpg /tmp/caddy-gpg.key
+  chmod 0644 /usr/share/keyrings/caddy-stable-archive-keyring.gpg
   curl -1sLf 'https://dl.cloudsmith.io/public/caddy/stable/debian.deb.txt' \
     > /etc/apt/sources.list.d/caddy-stable.list
   apt update
