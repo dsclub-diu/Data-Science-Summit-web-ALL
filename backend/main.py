@@ -33,7 +33,12 @@ N_RUNS = 100  # per spec discussion: 10 for now (real evaluation uses 100)
 app = FastAPI(title="Model Judging API")
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=[
+        "https://data-science-summit-2026.vercel.app",
+        "https://dsummit-judge.duckdns.org",
+        "http://localhost:3000",
+        "http://165.101.22.29:3000",
+    ],
     allow_methods=["*"],
     allow_headers=["*"],
 )
