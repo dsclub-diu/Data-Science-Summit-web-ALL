@@ -13,6 +13,7 @@ import shutil
 import sqlite3
 import subprocess
 import sys
+import threading
 import uuid
 from datetime import datetime, timezone
 from pathlib import Path
@@ -132,7 +133,17 @@ def _submission_env_python(sub_dir: Path) -> str:
     return py
 
 
+# Evaluations run one at a time so concurrent submissions can't steal CPU from
+# each other and skew the timed runs (Ptime must be measured on a quiet machine).
+EVAL_LOCK = threading.Lock()
+
+
 def evaluate_submission(sub_id: str) -> None:
+    with EVAL_LOCK:
+        _evaluate_submission(sub_id)
+
+
+def _evaluate_submission(sub_id: str) -> None:
     sub_dir = SUBMISSIONS_DIR / sub_id
     model_path = next(sub_dir.glob("model*"))
     our_preds = sub_dir / "our_predictions.csv"
