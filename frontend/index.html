@@ -38,12 +38,16 @@
       <form id="submitForm">
         <label>Team name *</label>
         <input type="text" name="team_name" required placeholder="Team Rocket">
-        <label>Model file (.joblib / .pkl) *</label>
-        <input type="file" name="model_file" required accept=".joblib,.pkl">
-        <label>Predictions CSV (optional — sanity check / fallback)</label>
-        <input type="file" name="predictions_csv" accept=".csv">
-        <label>requirements.txt (optional — used only if our env can't run your model)</label>
-        <input type="file" name="requirements_txt" accept=".txt">
+        <label>Email *</label>
+        <input type="text" name="email" required placeholder="team@example.com" inputmode="email">
+        <label>Model file (.joblib only) *</label>
+        <input type="file" name="model_file" required accept=".joblib">
+        <label>Predictions CSV *</label>
+        <input type="file" name="predictions_csv" required accept=".csv">
+        <label>requirements.txt *</label>
+        <input type="file" name="requirements_txt" required accept=".txt">
+        <label>Model Metrics CSV *</label>
+        <input type="file" name="metrics_csv" required accept=".csv">
         <button>Submit</button>
         <div class="msg" id="submitMsg"></div>
       </form>

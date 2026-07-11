@@ -9,20 +9,25 @@ directly from the browser, no proxy needed.
 
 ## 1. Submit a model
 
-`POST /api/submissions` — multipart/form-data
+`POST /api/submissions` — multipart/form-data. **All fields are required.**
 
-| Field | Required | Type | Notes |
-|---|---|---|---|
-| `team_name` | yes | text | |
-| `model_file` | yes | file | `.joblib` or `.pkl` |
-| `predictions_csv` | no | file | team's own predictions (sanity check / fallback) |
-| `requirements_txt` | no | file | pinned deps; we build their env from it |
+| Field | Type | Notes |
+|---|---|---|
+| `team_name` | text | |
+| `email` | text | **autofill this from the logged-in user's account — do not make them type it** |
+| `model_file` | file | **`.joblib` only** (`.pkl` is rejected) |
+| `predictions_csv` | file | team's predictions on the test set (`.csv`) |
+| `requirements_txt` | file | pinned pip deps of their training env |
+| `metrics_csv` | file | team's model metrics (`.csv`) |
 
 ```bash
 curl -X POST https://dsummit-judge.duckdns.org/api/submissions \
   -F team_name="Team Rocket" \
+  -F email="user@example.com" \
   -F model_file=@best_model_pipeline.joblib \
-  -F requirements_txt=@requirements.txt
+  -F predictions_csv=@predictions.csv \
+  -F requirements_txt=@requirements.txt \
+  -F metrics_csv=@metrics.csv
 ```
 
 Response (`201`):
@@ -31,25 +36,30 @@ Response (`201`):
 { "id": "9dc75ce8e244", "status": "pending" }
 ```
 
-Evaluation runs in the background — usually a few seconds, up to ~1–2 minutes
-when a `requirements.txt` env has to be built. Poll the leaderboard (or
-`GET /api/submissions/{id}`) until the status is no longer `pending`.
+Evaluation runs in the background — usually under a minute, up to a few minutes
+during a rush (submissions are evaluated one at a time for fair timing). Poll the
+leaderboard (or `GET /api/submissions/{id}`) until the status is no longer
+`pending`.
 
 JS example:
 
 ```js
 const fd = new FormData();
-fd.append("team_name", name);
-fd.append("model_file", fileInput.files[0]);          // required
-// fd.append("requirements_txt", reqInput.files[0]);  // optional
+fd.append("team_name", teamName);
+fd.append("email", currentUser.email);            // autofilled, not user-typed
+fd.append("model_file", modelInput.files[0]);     // .joblib only
+fd.append("predictions_csv", predsInput.files[0]);
+fd.append("requirements_txt", reqsInput.files[0]);
+fd.append("metrics_csv", metricsInput.files[0]);
 const res = await fetch("https://dsummit-judge.duckdns.org/api/submissions", {
   method: "POST",
-  body: fd,                                            // no Content-Type header — browser sets it
+  body: fd,                                        // no Content-Type header — browser sets it
 });
 const { id, status } = await res.json();
 ```
 
-Errors come back as `{ "detail": "message" }` with a 4xx status.
+Errors come back as `{ "detail": "message" }` with a 4xx status
+(e.g. wrong file extension, invalid email, missing field).
 
 ---
 

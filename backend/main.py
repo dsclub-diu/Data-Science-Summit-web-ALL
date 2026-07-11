@@ -59,6 +59,7 @@ def init_db() -> None:
             CREATE TABLE IF NOT EXISTS submissions (
                 id TEXT PRIMARY KEY,
                 team_name TEXT NOT NULL,
+                email TEXT,
                 model_filename TEXT NOT NULL,
                 size_bytes INTEGER NOT NULL,
                 status TEXT NOT NULL DEFAULT 'pending',
@@ -73,6 +74,10 @@ def init_db() -> None:
             )
             """
         )
+        # migration for DBs created before the email column existed
+        cols = [r[1] for r in conn.execute("PRAGMA table_info(submissions)")]
+        if "email" not in cols:
+            conn.execute("ALTER TABLE submissions ADD COLUMN email TEXT")
 
 
 init_db()
@@ -220,14 +225,21 @@ def health():
 async def create_submission(
     background: BackgroundTasks,
     team_name: str = Form(...),
+    email: str = Form(...),
     model_file: UploadFile = File(...),
-    predictions_csv: UploadFile | None = File(None),
-    requirements_txt: UploadFile | None = File(None),
+    predictions_csv: UploadFile = File(...),
+    requirements_txt: UploadFile = File(...),
+    metrics_csv: UploadFile = File(...),
 ):
     if not TEST_X_PATH.exists():
         raise HTTPException(400, "No test data uploaded yet (PUT /api/test-data first).")
-    if not model_file.filename.endswith((".joblib", ".pkl")):
-        raise HTTPException(400, "Model file must be a .joblib or .pkl file.")
+    if not model_file.filename.endswith(".joblib"):
+        raise HTTPException(400, "Model file must be a .joblib file.")
+    if "@" not in email or "." not in email.split("@")[-1]:
+        raise HTTPException(400, "A valid email address is required.")
+    for upload, label in ((predictions_csv, "predictions_csv"), (metrics_csv, "metrics_csv")):
+        if not upload.filename.endswith(".csv"):
+            raise HTTPException(400, f"{label} must be a .csv file.")
 
     sub_id = uuid.uuid4().hex[:12]
     sub_dir = SUBMISSIONS_DIR / sub_id
@@ -237,20 +249,21 @@ async def create_submission(
     model_path = sub_dir / f"model{suffix}"
     with model_path.open("wb") as f:
         shutil.copyfileobj(model_file.file, f)
-    if predictions_csv is not None:
-        with (sub_dir / "team_predictions.csv").open("wb") as f:
-            shutil.copyfileobj(predictions_csv.file, f)
-    if requirements_txt is not None:
-        with (sub_dir / "requirements.txt").open("wb") as f:
-            shutil.copyfileobj(requirements_txt.file, f)
+    with (sub_dir / "team_predictions.csv").open("wb") as f:
+        shutil.copyfileobj(predictions_csv.file, f)
+    with (sub_dir / "requirements.txt").open("wb") as f:
+        shutil.copyfileobj(requirements_txt.file, f)
+    with (sub_dir / "metrics.csv").open("wb") as f:
+        shutil.copyfileobj(metrics_csv.file, f)
 
     with db() as conn:
         conn.execute(
-            "INSERT INTO submissions (id, team_name, model_filename, size_bytes, status, created_at)"
-            " VALUES (?, ?, ?, ?, 'pending', ?)",
+            "INSERT INTO submissions (id, team_name, email, model_filename, size_bytes, status, created_at)"
+            " VALUES (?, ?, ?, ?, ?, 'pending', ?)",
             (
                 sub_id,
                 team_name.strip(),
+                email.strip().lower(),
                 model_file.filename,
                 model_path.stat().st_size,
                 datetime.now(timezone.utc).isoformat(),
