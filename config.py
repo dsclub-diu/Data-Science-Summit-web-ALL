@@ -22,6 +22,16 @@ TARGET_COLUMN = "target_breach"
 N_ROWS_EXPECTED = 500          # rows in test-x.csv / test-y.csv
 MAX_MODEL_SIZE_MB = 200        # reject absurdly large model files outright
 
+# Participants must declare their dependencies in requirements.txt. The judge
+# does NOT install them (it runs a fixed, pre-installed environment — see the
+# Dockerfile); the file is validated against this allow-list so an unsupported
+# library is reported clearly instead of surfacing as a cryptic MODEL_FAILED.
+# Publish this exact list (with versions) to participants.
+ALLOWED_LIBRARIES = {
+    "numpy", "pandas", "scipy", "scikit-learn", "sklearn",
+    "joblib", "xgboost", "lightgbm",
+}
+
 # --- Timing policy (from the competition PDF) -------------------------------
 # "We will measure the execution time by running your model file on our
 #  standard server 100 times and taking the average time."

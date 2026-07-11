@@ -52,6 +52,7 @@ STALE_RUNNING_SECONDS = int(os.environ.get("STALE_RUNNING_SECONDS", "900"))
 # Files a participant may include and the on-disk names the worker expects.
 UPLOAD_FILES = {"model_pkl": "model.pkl",
                 "predictions_csv": "predictions.csv",
+                "requirements_txt": "requirements.txt",
                 "model_py": "model.py"}
 TEAM_RE = re.compile(r"^[A-Za-z0-9 _-]{1,64}$")
 
@@ -125,21 +126,24 @@ async def _save_upload(upload, dest):
 async def submit(team: str = Form(...),
                  model_pkl: UploadFile = File(...),
                  predictions_csv: UploadFile = File(...),
+                 requirements_txt: UploadFile = File(...),
                  model_py: UploadFile = File(None)):
-    """A participant uploads their model + predictions (+ optional model.py).
-    Stored as a queued submission for the worker to pick up."""
+    """A participant uploads their model + predictions + requirements.txt
+    (+ optional model.py). Stored as a queued submission for the worker."""
     team = team.strip()
     if not TEAM_RE.match(team):
         raise HTTPException(status_code=400,
                             detail="team must be 1-64 chars of letters, digits, space, _ or -")
 
     sid = uuid.uuid4().hex[:12]
+    SUBS_DIR.mkdir(parents=True, exist_ok=True)   # survive a data-dir wipe
     sub_dir = SUBS_DIR / sid
     sub_dir.mkdir(parents=True)
     try:
         await _save_upload(model_pkl, sub_dir / "model.pkl")
         await _save_upload(predictions_csv, sub_dir / "predictions.csv")
-        files = ["model.pkl", "predictions.csv"]
+        await _save_upload(requirements_txt, sub_dir / "requirements.txt")
+        files = ["model.pkl", "predictions.csv", "requirements.txt"]
         if model_py is not None and (model_py.filename or "").strip():
             await _save_upload(model_py, sub_dir / "model.py")
             files.append("model.py")
@@ -297,6 +301,8 @@ DASHBOARD_HTML = """<!doctype html>
       <input type="file" name="model_pkl" accept=".pkl" required>
       <label>predictions.csv <span class="req">(required)</span></label>
       <input type="file" name="predictions_csv" accept=".csv" required>
+      <label>requirements.txt <span class="req">(required — your library dependencies)</span></label>
+      <input type="file" name="requirements_txt" accept=".txt" required>
       <label>model.py <span class="muted">(optional — only if the pickle uses a custom class)</span></label>
       <input type="file" name="model_py" accept=".py">
       <button id="btn" type="submit">Submit</button>
@@ -326,6 +332,7 @@ async function submitForm(e){
   data.append('team', form.team.value);
   data.append('model_pkl', form.model_pkl.files[0]);
   data.append('predictions_csv', form.predictions_csv.files[0]);
+  data.append('requirements_txt', form.requirements_txt.files[0]);
   if(form.model_py.files[0]) data.append('model_py', form.model_py.files[0]);
   btn.disabled=true; $('status').textContent='Uploading…';
   try{

@@ -19,6 +19,7 @@ before the real event. Delete submissions/ and results/ afterwards.
 Each folder follows the participant contract:
     submissions/<team>/model.pkl        (required)
     submissions/<team>/predictions.csv  (required)
+    submissions/<team>/requirements.txt (required)
     submissions/<team>/model.py         (only if the pickle uses a custom class)
 """
 import csv
@@ -219,9 +220,12 @@ def make_team(name, model_py=None, sklearn=False, cheat_labels=None,
     team_dir.mkdir(parents=True, exist_ok=True)
     if sklearn:
         build_sklearn_pickle(team_dir)  # no model.py needed for sklearn
+        (team_dir / "requirements.txt").write_text(
+            "numpy\npandas\nscikit-learn\njoblib\n")
     else:
         (team_dir / "model.py").write_text(model_py.lstrip())
         build_pickle(team_dir)
+        (team_dir / "requirements.txt").write_text("numpy\npandas\n")
 
     if cheat_labels is not None:
         labels = cheat_labels                       # CSV not from the model

@@ -77,27 +77,34 @@ floor) live in `config.py`. Freeze it before the first real evaluation.
 The PDF says to submit a `.pkl` and a CSV, but for the judge to *run* every
 model uniformly, participants must also be told:
 
-1. **The pickled object must expose `model.predict(df)`** where `df` is the
+1. **The model object must expose `model.predict(df)`** where `df` is the
    raw `test-x.csv` loaded with `pandas.read_csv`. All preprocessing must
    live **inside** the model object (e.g. an sklearn `Pipeline` or a custom
    class). It must return 500 **class labels** — each exactly `0` or `1`
    (or `True`/`False`). Returning probabilities (e.g. `0.93`) is rejected;
    threshold them yourself.
-2. **Saving the model.** Either `pickle.dump(model, f)` or
-   `joblib.dump(model, "model.pkl")` is accepted (joblib, including
-   `compress=`, is the standard way to shrink an sklearn model and the judge
-   loads both). The file must be named exactly `model.pkl`.
-3. **Custom classes/functions must live in a file named exactly `model.py`**
-   (module name `model`), included in the submission, and the pickle must be
-   created by importing from that module. A class or `FunctionTransformer`
+2. **Save the model with `joblib.dump(model, "model.pkl")`** (this is the
+   required serialization; `compress=` is allowed and helps the size score).
+   The file must be named exactly `model.pkl`.
+3. **A required `requirements.txt`** listing the libraries the model uses.
+   The judge does **not** install it — it runs a fixed environment (see
+   `Dockerfile`) — but it is validated against the allowed-library list
+   (`config.ALLOWED_LIBRARIES`); anything outside it is flagged
+   `UNSUPPORTED_LIBRARY`, and a missing file is flagged `MISSING_REQUIREMENTS`.
+4. **Custom classes/functions must live in a file named exactly `model.py`**
+   (module name `model`), included in the submission, and the model must be
+   dumped by importing from that module. A class or `FunctionTransformer`
    pickled from a notebook or a differently-named script records its origin
    as `__main__`/`<scriptname>` and will fail to load on the judge even if
    `model.py` is present.
-4. **Only libraries installed on the judging server may be used.** Publish
-   the exact list with pinned versions (see `Dockerfile`) — a pickle saved
-   under a different sklearn/xgboost version may fail to load.
-5. **The predictions CSV must be produced by the submitted model.** The
+5. **Only libraries in the published environment may be used.** Publish the
+   exact list with pinned versions (see `Dockerfile`) — a model saved under a
+   different sklearn/xgboost version may fail to load.
+6. **The predictions CSV must be produced by the submitted model.** The
    judge re-runs every model and compares its output to the submitted CSV.
+
+A submission folder is therefore: `model.pkl` (joblib), `predictions.csv`,
+`requirements.txt` (all required), and `model.py` (only if a custom class).
 
 ## Anti-cheat
 

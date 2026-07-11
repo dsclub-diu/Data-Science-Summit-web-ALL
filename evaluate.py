@@ -38,6 +38,7 @@ Usage:
 import csv
 import json
 import os
+import re
 import shutil
 import signal
 import subprocess
@@ -90,6 +91,28 @@ def load_answer_key():
 def accuracy(predictions, answers):
     hits = sum(p == a for p, a in zip(predictions, answers))
     return hits / len(answers)
+
+
+def parse_requirement_names(text):
+    """Pull bare package names out of a requirements.txt (drop version pins,
+    extras, comments, and pip options)."""
+    names = []
+    for line in text.splitlines():
+        line = line.strip()
+        if not line or line.startswith("#") or line.startswith("-"):
+            continue
+        name = re.split(r"[<>=!~;\[\( ]", line, 1)[0].strip().lower()
+        if name:
+            names.append(name)
+    return names
+
+
+def unsupported_libraries(req_path):
+    """Return requirement names that are not on the allow-list. The judge
+    never installs anything; this only produces a clear diagnostic flag."""
+    text = req_path.read_text(encoding="utf-8-sig", errors="replace")
+    allowed = {a.lower() for a in config.ALLOWED_LIBRARIES}
+    return sorted({n for n in parse_requirement_names(text) if n not in allowed})
 
 
 def run_model_sandboxed(model_path, n_expected):
@@ -211,6 +234,19 @@ def evaluate_team(team_dir, answers):
             result["flags"].append(
                 f"MODEL_TOO_LARGE: {size} bytes exceeds the "
                 f"{config.MAX_MODEL_SIZE_MB} MB limit")
+
+    # --- 2b. Declared dependencies (required; validated, never installed) ---
+    req_path = team_dir / "requirements.txt"
+    result["requirements_present"] = req_path.exists()
+    if not req_path.exists():
+        result["flags"].append("MISSING_REQUIREMENTS")
+    else:
+        try:
+            bad = unsupported_libraries(req_path)
+            if bad:
+                result["flags"].append(f"UNSUPPORTED_LIBRARY: {', '.join(bad)}")
+        except OSError:
+            result["flags"].append("INVALID_REQUIREMENTS")
 
     # --- 3. Run the model: timing + verified predictions --------------------
     if model_path.exists():

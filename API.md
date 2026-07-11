@@ -19,12 +19,17 @@ through Vercel serverless functions (they cap bodies at ~4.5 MB).
 
 `multipart/form-data` with:
 
-| field             | type   | required | notes                                         |
-|-------------------|--------|----------|-----------------------------------------------|
-| `team`            | text   | yes      | 1–64 chars: letters, digits, space, `_`, `-`  |
-| `model_pkl`       | file   | yes      | the model, `model.pkl`                        |
-| `predictions_csv` | file   | yes      | `predictions.csv` (header `target_breach`)    |
-| `model_py`        | file   | no       | only if their model uses a custom class       |
+| field              | type   | required | notes                                                  |
+|--------------------|--------|----------|--------------------------------------------------------|
+| `team`             | text   | yes      | 1–64 chars: letters, digits, space, `_`, `-`           |
+| `model_pkl`        | file   | yes      | the model, `model.pkl`, saved with `joblib.dump`       |
+| `predictions_csv`  | file   | yes      | `predictions.csv` (header `target_breach`)             |
+| `requirements_txt` | file   | yes      | `requirements.txt` listing the model's libraries       |
+| `model_py`         | file   | no       | only if their model uses a custom class                |
+
+A submit missing any required file is rejected with **HTTP 422**. Please make
+the form require all four (`team`, `model_pkl`, `predictions_csv`,
+`requirements_txt`) client-side too, for a nicer error.
 
 **200 OK**
 ```json
@@ -37,8 +42,9 @@ Browser example (this is the whole integration):
 ```js
 const form = new FormData();
 form.append("team", teamName);
-form.append("model_pkl", modelPklFile);          // from <input type="file">
+form.append("model_pkl", modelPklFile);              // from <input type="file">
 form.append("predictions_csv", predictionsFile);
+form.append("requirements_txt", requirementsFile);   // required
 if (modelPyFile) form.append("model_py", modelPyFile);   // optional
 
 const res = await fetch("https://judge.<our-domain>/submit", {
