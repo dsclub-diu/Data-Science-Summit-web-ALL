@@ -11,6 +11,9 @@ id_rsa*
 # ever copied in.
 test-y.csv
 train.py
+# Environment files hold the WORKER_TOKEN and other secrets — never commit.
+.env
+.env.*
 
 # --- Generated at runtime (not source) ---
 submissions/
