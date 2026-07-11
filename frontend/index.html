@@ -1,0 +1,147 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Hackathon Leaderboard</title>
+<style>
+  :root { --bg:#0f1117; --card:#181b23; --line:#2a2f3c; --text:#e8eaf0; --muted:#9aa1b2; --accent:#5b8cff; --ok:#3fbf7f; --bad:#e5646c; }
+  * { box-sizing:border-box; margin:0; }
+  body { font:15px/1.5 -apple-system, "Segoe UI", sans-serif; background:var(--bg); color:var(--text); padding:2rem 1rem; }
+  .wrap { max-width:1100px; margin:0 auto; display:grid; gap:1.5rem; }
+  h1 { font-size:1.4rem; } h2 { font-size:1.05rem; margin-bottom:.75rem; }
+  .card { background:var(--card); border:1px solid var(--line); border-radius:12px; padding:1.25rem; }
+  label { display:block; font-size:.85rem; color:var(--muted); margin:.6rem 0 .2rem; }
+  input[type=text], input[type=file] { width:100%; padding:.5rem; border-radius:8px; border:1px solid var(--line); background:var(--bg); color:var(--text); }
+  button { margin-top:1rem; padding:.55rem 1.2rem; border:0; border-radius:8px; background:var(--accent); color:#fff; font-weight:600; cursor:pointer; }
+  button:disabled { opacity:.5; cursor:wait; }
+  .msg { margin-top:.6rem; font-size:.85rem; min-height:1.2em; }
+  .msg.ok { color:var(--ok); } .msg.err { color:var(--bad); }
+  .scroll { overflow-x:auto; }
+  table { width:100%; border-collapse:collapse; font-size:.88rem; white-space:nowrap; }
+  th, td { padding:.5rem .7rem; text-align:left; border-bottom:1px solid var(--line); }
+  th { color:var(--muted); font-weight:600; font-size:.78rem; text-transform:uppercase; letter-spacing:.04em; }
+  .status-completed { color:var(--ok); } .status-pending { color:var(--accent); }
+  .status-failed_run, .status-error { color:var(--bad); }
+  .grid2 { display:grid; gap:1.5rem; grid-template-columns:1fr 1fr; }
+  @media (max-width:800px){ .grid2 { grid-template-columns:1fr; } }
+  .hint { font-size:.8rem; color:var(--muted); }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>🏆 Model Judging — Hackathon</h1>
+
+  <div class="grid2">
+    <div class="card">
+      <h2>Submit a model</h2>
+      <form id="submitForm">
+        <label>Team name *</label>
+        <input type="text" name="team_name" required placeholder="Team Rocket">
+        <label>Model file (.joblib / .pkl) *</label>
+        <input type="file" name="model_file" required accept=".joblib,.pkl">
+        <label>Predictions CSV (optional — sanity check / fallback)</label>
+        <input type="file" name="predictions_csv" accept=".csv">
+        <label>requirements.txt (optional — used only if our env can't run your model)</label>
+        <input type="file" name="requirements_txt" accept=".txt">
+        <button>Submit</button>
+        <div class="msg" id="submitMsg"></div>
+      </form>
+    </div>
+
+    <div class="card">
+      <h2>Update test data (admin)</h2>
+      <form id="testForm">
+        <label>Test X csv</label>
+        <input type="file" name="test_x" accept=".csv">
+        <label>Test Y csv (ground truth)</label>
+        <input type="file" name="test_y" accept=".csv">
+        <button>Update test data</button>
+        <div class="msg" id="testMsg"></div>
+      </form>
+      <p class="hint" id="healthHint"></p>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Leaderboard <span class="hint">(refreshes while a submission is evaluating · score = accuracy×100 + Psize + Ptime)</span>
+      <button style="margin:0 0 0 .8rem; padding:.25rem .8rem; font-size:.8rem" onclick="refresh()">Refresh</button></h2>
+    <div class="scroll"><table>
+      <thead><tr>
+        <th>#</th><th>Team</th><th>Score</th><th>Accuracy</th><th>Psize</th><th>Ptime</th>
+        <th>Avg time (s)</th><th>Size (KB)</th><th>Status</th><th>Acc. source</th><th>Sanity %</th>
+      </tr></thead>
+      <tbody id="lbBody"><tr><td colspan="11">Loading…</td></tr></tbody>
+    </table></div>
+  </div>
+
+  <div class="card">
+    <h2>All submissions</h2>
+    <div class="scroll"><table>
+      <thead><tr><th>Team</th><th>File</th><th>Status</th><th>Submitted</th><th>Error</th></tr></thead>
+      <tbody id="subBody"></tbody>
+    </table></div>
+  </div>
+</div>
+
+<script>
+const API = localStorage.getItem('apiBase') || 'http://localhost:8000';
+const $ = id => document.getElementById(id);
+const fmt = (v, d=4) => v == null ? '—' : Number(v).toFixed(d);
+
+async function postForm(url, form, msgEl, method='POST') {
+  const btn = form.querySelector('button'); btn.disabled = true;
+  msgEl.textContent = 'Uploading…'; msgEl.className = 'msg';
+  try {
+    const fd = new FormData(form);
+    for (const [k, v] of [...fd.entries()]) if (v instanceof File && !v.name) fd.delete(k);
+    const res = await fetch(url, { method, body: fd });
+    const body = await res.json();
+    if (!res.ok) throw new Error(body.detail || res.statusText);
+    msgEl.textContent = '✓ ' + JSON.stringify(body); msgEl.className = 'msg ok';
+    form.reset(); refresh();
+  } catch (e) {
+    msgEl.textContent = '✗ ' + e.message; msgEl.className = 'msg err';
+  } finally { btn.disabled = false; }
+}
+
+$('submitForm').addEventListener('submit', e => { e.preventDefault(); postForm(API + '/api/submissions', e.target, $('submitMsg')); });
+$('testForm').addEventListener('submit', e => { e.preventDefault(); postForm(API + '/api/test-data', e.target, $('testMsg'), 'PUT'); });
+
+async function refresh() {
+  try {
+    const [lb, subs, health] = await Promise.all([
+      fetch(API + '/api/leaderboard').then(r => r.json()),
+      fetch(API + '/api/submissions').then(r => r.json()),
+      fetch(API + '/api/health').then(r => r.json()),
+    ]);
+    $('healthHint').textContent = `Test X rows: ${health.test_x_rows ?? 'none'} · ground truth uploaded: ${health.test_y_present ? 'yes' : 'NO — accuracy cannot be computed yet'}`;
+    $('lbBody').innerHTML = lb.entries.length ? lb.entries.map(e => `
+      <tr><td>${e.rank}</td><td>${e.team_name}</td><td><b>${e.score}</b></td>
+      <td>${fmt(e.accuracy * 100, 2)}%</td><td>${e.p_size}</td><td>${e.p_time}</td>
+      <td>${fmt(e.avg_time_s)}</td><td>${(e.size_bytes/1024).toFixed(1)}</td>
+      <td class="status-${e.status}">${e.status}${e.used_fallback_env ? ' (venv)' : ''}</td>
+      <td>${e.accuracy_source ?? '—'}</td><td>${e.sanity_match_pct == null ? '—' : e.sanity_match_pct.toFixed(1)}</td></tr>`).join('')
+      : '<tr><td colspan="11">No scoreable submissions yet.</td></tr>';
+    $('subBody').innerHTML = subs.length ? subs.map(s => `
+      <tr><td>${s.team_name}</td><td>${s.model_filename}</td>
+      <td class="status-${s.status}">${s.status}</td>
+      <td>${new Date(s.created_at).toLocaleString()}</td>
+      <td title="${(s.error||'').replaceAll('"','&quot;')}">${s.error ? s.error.slice(0,80)+'…' : '—'}</td></tr>`).join('')
+      : '<tr><td colspan="5">None yet.</td></tr>';
+    schedulePoll(subs);
+  } catch (e) {
+    $('lbBody').innerHTML = `<tr><td colspan="11">Cannot reach API at ${API} — is the backend running?</td></tr>`;
+  }
+}
+// Poll only while a submission is still being evaluated; otherwise stay idle.
+let pollTimer = null;
+function schedulePoll(subs) {
+  const busy = subs.some(s => s.status === 'pending');
+  if (busy && !pollTimer) pollTimer = setInterval(refresh, 4000);
+  if (!busy && pollTimer) { clearInterval(pollTimer); pollTimer = null; }
+}
+refresh();
+</script>
+</body>
+</html>
