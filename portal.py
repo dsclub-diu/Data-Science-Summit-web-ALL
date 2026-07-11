@@ -297,8 +297,8 @@ DASHBOARD_HTML = """<!doctype html>
     <form id="f" onsubmit="return submitForm(event)">
       <label>Team name</label>
       <input type="text" name="team" required maxlength="64" placeholder="e.g. Test Team 1">
-      <label>model.pkl <span class="req">(required)</span></label>
-      <input type="file" name="model_pkl" accept=".pkl" required>
+      <label>model.pkl <span class="req">(required — saved with joblib.dump)</span></label>
+      <input type="file" name="model_pkl" accept=".pkl,.joblib,.z,.gz" required>
       <label>predictions.csv <span class="req">(required)</span></label>
       <input type="file" name="predictions_csv" accept=".csv" required>
       <label>requirements.txt <span class="req">(required — your library dependencies)</span></label>
