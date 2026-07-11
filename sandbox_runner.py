@@ -55,30 +55,31 @@ def set_resource_limits(mem_mb, cpu_seconds):
 
 
 def load_model(model_bytes):
-    """Deserialize a submitted model, tolerating the common ways teams save
-    them: plain pickle, joblib (including joblib's own compression), and a
-    pickle wrapped in a standard compressor (zlib/gzip/bz2/lzma). This avoids
-    'invalid load key' errors when a model was saved compressed."""
+    """Deserialize a submitted model. joblib is the required format, so we load
+    with joblib and REPORT its error when loading fails — a missing library
+    (including joblib itself) or a custom-class module surfaces clearly instead
+    of being masked by a confusing pickle fallback error."""
     import io
-    # 1. joblib reads joblib dumps AND plain pickles, and self-decompresses.
     try:
         import joblib
         return joblib.load(io.BytesIO(model_bytes))
-    except Exception:
-        pass
-    # 2. Try transparent decompression, then pickle.
-    import bz2
-    import gzip
-    import lzma
-    import zlib
-    for decompress in (lambda b: b, gzip.decompress, zlib.decompress,
-                       bz2.decompress, lzma.decompress):
-        try:
-            return pickle.loads(decompress(model_bytes))
-        except Exception:
-            continue
-    # 3. Last resort: raw pickle, so the real error is surfaced.
-    return pickle.loads(model_bytes)
+    except ModuleNotFoundError:
+        # joblib not installed, or the model needs a library / model.py that
+        # isn't present. This is the real, actionable error — surface it.
+        raise
+    except Exception as joblib_error:
+        # Not a joblib file? Fall back to plain / compressed pickle.
+        import bz2
+        import gzip
+        import lzma
+        import zlib
+        for decompress in (lambda b: b, gzip.decompress, zlib.decompress,
+                           bz2.decompress, lzma.decompress):
+            try:
+                return pickle.loads(decompress(model_bytes))
+            except Exception:
+                continue
+        raise joblib_error  # surface joblib's error, not a masked pickle one
 
 
 def to_label_list(pred, n_expected):
