@@ -19,7 +19,9 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 import pandas as pd
-from fastapi import BackgroundTasks, FastAPI, File, Form, HTTPException, UploadFile
+from fastapi import BackgroundTasks, FastAPI, File, Form, HTTPException, Request, UploadFile
+from fastapi.exception_handlers import request_validation_exception_handler
+from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -102,6 +104,33 @@ def init_db() -> None:
 
 
 init_db()
+
+
+@app.exception_handler(RequestValidationError)
+async def log_422(request: Request, exc: RequestValidationError):
+    """Log which fields failed validation — helps debug integrations mid-event."""
+    summary = [
+        {"field": ".".join(str(p) for p in e.get("loc", [])), "error": e.get("msg")}
+        for e in exc.errors()
+    ]
+    print(f"[422] {request.method} {request.url.path} from {request.client.host}: {summary}", flush=True)
+    return await request_validation_exception_handler(request, exc)
+
+
+@app.on_event("startup")
+def requeue_pending() -> None:
+    """Re-run evaluations that were stranded 'pending' by a server restart."""
+    with db() as conn:
+        stuck = [r[0] for r in conn.execute("SELECT id FROM submissions WHERE status = 'pending'")]
+        stuck_evals = conn.execute(
+            "SELECT id, submission_id FROM custom_evals WHERE status = 'pending'"
+        ).fetchall()
+    for sid in stuck:
+        threading.Thread(target=evaluate_submission, args=(sid,), daemon=True).start()
+    for eval_id, sub_id in stuck_evals:
+        threading.Thread(target=run_custom_eval, args=(eval_id, sub_id), daemon=True).start()
+    if stuck or stuck_evals:
+        print(f"[startup] requeued {len(stuck)} submissions, {len(stuck_evals)} custom evals", flush=True)
 
 
 # ---------------------------------------------------------------- evaluation
