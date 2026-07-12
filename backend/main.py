@@ -505,10 +505,16 @@ def _notebook_metric_candidates(nb_path: Path) -> dict:
         found["f1"].add(round(float(m.group(1)), 4))
     for m in re.finditer(r"(?i)\baccuracy\b[^0-9\n]{0,25}([01](?:\.\d+)?)", blob):
         found["accuracy"].add(round(float(m.group(1)), 4))
-    # sklearn classification_report rows: "macro avg   prec  recall  f1  support"
-    for m in re.finditer(r"(?i)(?:macro|weighted)\s+avg\s+([\d.]+)\s+([\d.]+)\s+([\d.]+)", blob):
+    # sklearn classification_report rows: per-class and avg rows both end "prec recall f1 support"
+    for m in re.finditer(r"(?im)^\s*\S[\S ]*?\s+(0(?:\.\d+)?|1(?:\.0+)?)\s+(0(?:\.\d+)?|1(?:\.0+)?)\s+(0(?:\.\d+)?|1(?:\.0+)?)\s+\d+\s*$", blob):
         found["f1"].add(round(float(m.group(3)), 4))
-    return {k: sorted(v) for k, v in found.items()}
+    # every bare 0-1 float in outputs — used as a weaker "appears unlabeled" fallback
+    all_numbers = set()
+    for m in re.finditer(r"\b(0\.\d{2,}|1\.0+)\b", blob):
+        all_numbers.add(round(float(m.group(1)), 4))
+    result = {k: sorted(v) for k, v in found.items()}
+    result["any"] = sorted(all_numbers)
+    return result
 
 
 def _closest(candidates: list, target: float, tol: float = 0.011):
@@ -537,6 +543,8 @@ def final_leaderboard():
                 checks[name] = "no_notebook"
             elif _closest(nb.get(name, []), val) is not None:
                 checks[name] = "verified"
+            elif _closest(nb.get("any", []), val) is not None:
+                checks[name] = "found_unlabeled"
             else:
                 checks[name] = "not_found"
         entries.append(

@@ -18,7 +18,7 @@
   th { color:var(--muted); font-weight:600; font-size:.78rem; text-transform:uppercase; letter-spacing:.04em; }
   .hint { font-size:.8rem; color:var(--muted); }
   .v-verified { color:var(--ok); } .v-not_found { color:var(--bad); }
-  .v-no_notebook, .v-not_reported { color:var(--warn); }
+  .v-no_notebook, .v-not_reported, .v-found_unlabeled { color:var(--warn); }
   nav a { margin-right:1rem; }
 </style>
 </head>
@@ -33,7 +33,8 @@
   </nav>
   <div class="card">
     <p class="hint" style="margin-bottom:.8rem">
-      <b class="v-verified">✓ verified</b> — the reported value (±0.011) appears in the notebook's printed outputs ·
+      <b class="v-verified">✓ verified</b> — the reported value (±0.011) appears labeled in the notebook's printed outputs ·
+      <b class="v-found_unlabeled">~ unlabeled</b> — the value appears in outputs but without an accuracy/F1 label ·
       <b class="v-not_found">✗ not found</b> — reported value doesn't appear in any notebook output ·
       <b class="v-no_notebook">— </b> no notebook / not reported.
       "Our F1 / Acc" = measured by the judging server on the official test set.
@@ -57,7 +58,7 @@ const API = window.API = localStorage.getItem('apiBase')
       : `http://${location.hostname || 'localhost'}:${location.hostname === 'localhost' || !location.hostname ? 8000 : 8001}`);
 const esc = t => (t||'').replaceAll('&','&amp;').replaceAll('<','&lt;');
 const fmt = (v, d=4) => v == null ? '—' : Number(v).toFixed(d);
-const MARK = { verified: '✓ verified', not_found: '✗ not found', no_notebook: '— no notebook', not_reported: '— not reported' };
+const MARK = { verified: '✓ verified', found_unlabeled: '~ unlabeled', not_found: '✗ not found', no_notebook: '— no notebook', not_reported: '— not reported' };
 const mark = (v, cands) => `<span class="v-${v}" title="found in notebook: ${cands.join(', ') || 'nothing'}">${MARK[v]}</span>`;
 
 fetch(API + '/api/final-leaderboard').then(r => r.json()).then(d => {
