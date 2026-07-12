@@ -23,6 +23,7 @@ from fastapi import BackgroundTasks, FastAPI, File, Form, HTTPException, Request
 from fastapi.exception_handlers import request_validation_exception_handler
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import FileResponse
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 DATA_DIR = BASE_DIR / "data"
@@ -276,6 +277,51 @@ def _team_x_path(sub_dir: Path) -> Path | None:
     return None
 
 
+def _submission_file(sub_dir: Path, kind: str) -> Path | None:
+    """Resolve a downloadable submission file by kind."""
+    if kind == "test_x":
+        return _team_x_path(sub_dir)
+    if kind == "model":
+        return next(sub_dir.glob("model*"), None)
+    fixed = {
+        "notebook": "notebook.ipynb",
+        "metrics": "metrics.csv",
+        "predictions": "team_predictions.csv",
+        "requirements": "requirements.txt",
+    }
+    if kind not in fixed:
+        return None
+    p = sub_dir / fixed[kind]
+    return p if p.exists() else None
+
+
+def _parse_team_metrics(path: Path) -> dict:
+    """Best-effort parse of a team's metrics.csv into {metric: value}.
+
+    Supports one-row wide format (accuracy,precision,...) and two-column
+    long format (metric,value)."""
+    try:
+        df = pd.read_csv(path)
+        if df.shape[1] == 2 and df.shape[0] > 1:
+            pairs = zip(df.iloc[:, 0], df.iloc[:, 1])
+        elif df.shape[0] >= 1:
+            pairs = zip(df.columns, df.iloc[0])
+        else:
+            return {}
+        out = {}
+        for k, v in pairs:
+            key = str(k).strip().lower()
+            if key.replace(" ", "").replace("-", "").replace("_", "") in ("f1", "f1score"):
+                key = "f1"
+            try:
+                out[key] = float(v)
+            except (TypeError, ValueError):
+                continue
+        return out
+    except Exception:
+        return {}
+
+
 def run_custom_eval(eval_id: str, sub_id: str) -> None:
     with EVAL_LOCK:
         _run_custom_eval(eval_id, sub_id)
@@ -406,11 +452,59 @@ async def create_submission(
     return {"id": sub_id, "status": "pending"}
 
 
+FILE_KINDS = ("notebook", "metrics", "predictions", "requirements", "test_x", "model")
+
+
 @app.get("/api/submissions")
 def list_submissions():
     with db() as conn:
         rows = conn.execute("SELECT * FROM submissions ORDER BY created_at DESC").fetchall()
-    return [dict(r) for r in rows]
+    out = []
+    for r in rows:
+        d = dict(r)
+        sub_dir = SUBMISSIONS_DIR / d["id"]
+        d["files"] = {k: _submission_file(sub_dir, k) is not None for k in FILE_KINDS}
+        out.append(d)
+    return out
+
+
+@app.get("/api/submissions/{sub_id}/files/{kind}")
+def download_submission_file(sub_id: str, kind: str):
+    if not sub_id.isalnum():
+        raise HTTPException(400, "Bad submission id")
+    if kind not in FILE_KINDS:
+        raise HTTPException(400, f"kind must be one of {FILE_KINDS}")
+    with db() as conn:
+        row = conn.execute("SELECT team_name FROM submissions WHERE id = ?", (sub_id,)).fetchone()
+    if row is None:
+        raise HTTPException(404, "Submission not found")
+    path = _submission_file(SUBMISSIONS_DIR / sub_id, kind)
+    if path is None:
+        raise HTTPException(404, f"This submission has no {kind} file")
+    safe_team = "".join(c if c.isalnum() or c in "-_" else "_" for c in row["team_name"])[:40]
+    return FileResponse(path, filename=f"{safe_team}_{sub_id}_{path.name}")
+
+
+@app.get("/api/team-metrics")
+def team_metrics():
+    """Each submission's self-reported metrics parsed from its uploaded metrics.csv."""
+    with db() as conn:
+        rows = conn.execute(
+            "SELECT id, team_name, email, created_at FROM submissions ORDER BY created_at DESC"
+        ).fetchall()
+    out = []
+    for r in rows:
+        path = _submission_file(SUBMISSIONS_DIR / r["id"], "metrics")
+        out.append(
+            {
+                "id": r["id"],
+                "team_name": r["team_name"],
+                "email": r["email"],
+                "created_at": r["created_at"],
+                "metrics": _parse_team_metrics(path) if path else {},
+            }
+        )
+    return out
 
 
 @app.get("/api/submissions/{sub_id}")

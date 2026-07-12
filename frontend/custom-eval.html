@@ -29,13 +29,18 @@
 <body>
 <div class="wrap">
   <h1>🧪 Custom Evaluation <span class="hint">— runs each model on the team's own uploaded test X (manual, admin only)</span></h1>
-  <p class="hint"><a href="/">← back to leaderboard</a></p>
+  <p class="hint">
+    <a href="/?admin=1">← back to leaderboard</a> &nbsp;
+    <a href="/notebooks.html">Notebooks</a> &nbsp;
+    <a href="/metrics.html">Team metrics</a>
+  </p>
 
   <div class="card">
     <h2>Models <span class="hint">(nothing runs automatically — press Run to evaluate on the team's data)</span></h2>
     <div class="scroll"><table>
-      <thead><tr><th>Team</th><th>File</th><th>Official status</th><th>Submitted</th><th></th></tr></thead>
-      <tbody id="modelsBody"><tr><td colspan="5">Loading…</td></tr></tbody>
+      <thead><tr><th>Team</th><th>File</th><th>Official status</th><th>Submitted</th>
+        <th>Notebook</th><th>Metrics</th><th>Predictions</th><th>requirements.txt</th><th>Test X data</th><th></th></tr></thead>
+      <tbody id="modelsBody"><tr><td colspan="10">Loading…</td></tr></tbody>
     </table></div>
   </div>
 
@@ -82,14 +87,22 @@ async function refresh() {
       fetch(API + '/api/custom-evals').then(r => r.json()),
     ]);
     const pendingSubs = new Set(evals.filter(e => e.status === 'pending').map(e => e.submission_id));
+    const fileLink = (s, kind, label) => s.files && s.files[kind]
+      ? `<a href="${API}/api/submissions/${s.id}/files/${kind}">⬇ ${label}</a>`
+      : '<span class="hint">—</span>';
     $('modelsBody').innerHTML = subs.length ? subs.map(s => `
       <tr><td>${esc(s.team_name)}</td><td>${esc(s.model_filename)}</td>
       <td class="status-${s.status}">${s.status}</td>
       <td>${new Date(s.created_at).toLocaleString()}</td>
+      <td>${fileLink(s, 'notebook', 'ipynb')}</td>
+      <td>${fileLink(s, 'metrics', 'csv')}</td>
+      <td>${fileLink(s, 'predictions', 'csv')}</td>
+      <td>${fileLink(s, 'requirements', 'txt')}</td>
+      <td>${fileLink(s, 'test_x', 'csv')}</td>
       <td>${pendingSubs.has(s.id)
           ? '<button disabled>Running…</button>'
           : `<button onclick="runEval('${s.id}', this)">Run</button>`}</td></tr>`).join('')
-      : '<tr><td colspan="5">No submissions yet.</td></tr>';
+      : '<tr><td colspan="10">No submissions yet.</td></tr>';
 
     const openErrs = new Set([...document.querySelectorAll('tr[id^="err-"]')].filter(r => r.style.display !== 'none').map(r => r.id));
     $('resultsBody').innerHTML = evals.length ? evals.map(e => `
@@ -106,7 +119,7 @@ async function refresh() {
 
     schedulePoll(evals);
   } catch (e) {
-    $('modelsBody').innerHTML = `<tr><td colspan="5">Cannot reach API at ${API} — is the backend running?</td></tr>`;
+    $('modelsBody').innerHTML = `<tr><td colspan="10">Cannot reach API at ${API} — is the backend running?</td></tr>`;
   }
 }
 
