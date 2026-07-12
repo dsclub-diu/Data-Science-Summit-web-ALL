@@ -83,6 +83,7 @@ curl https://dsummit-judge.duckdns.org/api/leaderboard
       "team_name": "Team Rocket",
       "score": 266.0,
       "accuracy": 0.66,
+      "f1": 0.71,
       "p_size": 100.0,
       "p_time": 100.0,
       "avg_time_s": 0.0014,
@@ -94,10 +95,12 @@ curl https://dsummit-judge.duckdns.org/api/leaderboard
 ```
 
 Display columns: `rank`, `team_name`, `score`, `accuracy` (multiply by 100 for %),
+`f1` (0–1, F1 score of the positive class computed by us on the test set),
 `p_size`, `p_time`, `avg_time_s`, `size_bytes`.
 
 Score formula: `accuracy × 100 + Psize + Ptime` (Psize/Ptime = % of other teams
-with a larger file / slower time — they change as new teams submit).
+with a larger file / slower time — they change as new teams submit). F1 is
+informational — it is shown on the dashboard but does not enter the score.
 
 Statuses: `pending` (still evaluating), `completed`, `failed_run` (model didn't
 run; the `error` field says why).

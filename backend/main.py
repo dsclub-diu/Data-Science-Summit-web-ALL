@@ -66,6 +66,7 @@ def init_db() -> None:
                 avg_time_s REAL,
                 load_time_s REAL,
                 accuracy REAL,
+                f1 REAL,
                 accuracy_source TEXT,
                 sanity_match_pct REAL,
                 used_fallback_env INTEGER DEFAULT 0,
@@ -74,10 +75,12 @@ def init_db() -> None:
             )
             """
         )
-        # migration for DBs created before the email column existed
+        # migrations for DBs created before newer columns existed
         cols = [r[1] for r in conn.execute("PRAGMA table_info(submissions)")]
         if "email" not in cols:
             conn.execute("ALTER TABLE submissions ADD COLUMN email TEXT")
+        if "f1" not in cols:
+            conn.execute("ALTER TABLE submissions ADD COLUMN f1 REAL")
 
 
 init_db()
@@ -85,15 +88,20 @@ init_db()
 
 # ---------------------------------------------------------------- evaluation
 
-def _compute_accuracy(pred_csv: Path) -> float | None:
-    """Accuracy of a predictions csv against the ground-truth labels, if present."""
+def _compute_metrics(pred_csv: Path) -> tuple[float, float] | None:
+    """(accuracy, F1 for positive class '1') of a predictions csv vs ground truth."""
     if not TEST_Y_PATH.exists():
         return None
-    y_true = pd.read_csv(TEST_Y_PATH).iloc[:, 0]
-    y_pred = pd.read_csv(pred_csv).iloc[:, 0]
+    y_true = pd.read_csv(TEST_Y_PATH).iloc[:, 0].values.astype(str)
+    y_pred = pd.read_csv(pred_csv).iloc[:, 0].values.astype(str)
     if len(y_true) != len(y_pred):
         return None
-    return float((y_true.values.astype(str) == y_pred.values.astype(str)).mean())
+    accuracy = float((y_true == y_pred).mean())
+    tp = int(((y_pred == "1") & (y_true == "1")).sum())
+    fp = int(((y_pred == "1") & (y_true != "1")).sum())
+    fn = int(((y_pred != "1") & (y_true == "1")).sum())
+    f1 = 2 * tp / (2 * tp + fp + fn) if (2 * tp + fp + fn) else 0.0
+    return accuracy, float(f1)
 
 
 def _sanity_check(our_preds: Path, team_preds: Path) -> float | None:
@@ -189,9 +197,9 @@ def _evaluate_submission(sub_id: str) -> None:
                 f.write(f"{datetime.now(timezone.utc).isoformat()} {line}\n")
             fields["avg_time_s"] = result["avg_time_s"]
             fields["load_time_s"] = result["load_time_s"]
-            acc = _compute_accuracy(our_preds)
-            if acc is not None:
-                fields["accuracy"] = acc
+            metrics = _compute_metrics(our_preds)
+            if metrics is not None:
+                fields["accuracy"], fields["f1"] = metrics
                 fields["accuracy_source"] = "our_run"
             if team_preds.exists():
                 fields["sanity_match_pct"] = _sanity_check(our_preds, team_preds)
@@ -200,9 +208,9 @@ def _evaluate_submission(sub_id: str) -> None:
             fields["status"] = "failed_run"
             fields["error"] = result.get("error", "unknown error")[-4000:]
             if team_preds.exists():
-                acc = _compute_accuracy(team_preds)
-                if acc is not None:
-                    fields["accuracy"] = acc
+                metrics = _compute_metrics(team_preds)
+                if metrics is not None:
+                    fields["accuracy"], fields["f1"] = metrics
                     fields["accuracy_source"] = "team_csv"
     except Exception as e:
         fields["status"] = "error"

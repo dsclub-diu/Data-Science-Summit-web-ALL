@@ -74,10 +74,10 @@
       <button style="margin:0 0 0 .8rem; padding:.25rem .8rem; font-size:.8rem" onclick="refresh()">Refresh</button></h2>
     <div class="scroll"><table>
       <thead><tr>
-        <th>#</th><th>Team</th><th>Score</th><th>Accuracy</th><th>Psize</th><th>Ptime</th>
+        <th>#</th><th>Team</th><th>Score</th><th>Accuracy</th><th>F1</th><th>Psize</th><th>Ptime</th>
         <th>Avg time (s)</th><th>Size (KB)</th><th>Status</th><th>Acc. source</th><th>Sanity %</th>
       </tr></thead>
-      <tbody id="lbBody"><tr><td colspan="11">Loading…</td></tr></tbody>
+      <tbody id="lbBody"><tr><td colspan="12">Loading…</td></tr></tbody>
     </table></div>
   </div>
 
@@ -127,11 +127,11 @@ async function refresh() {
     $('healthHint').textContent = `Test X rows: ${health.test_x_rows ?? 'none'} · ground truth uploaded: ${health.test_y_present ? 'yes' : 'NO — accuracy cannot be computed yet'}`;
     $('lbBody').innerHTML = lb.entries.length ? lb.entries.map(e => `
       <tr><td>${e.rank}</td><td>${e.team_name}</td><td><b>${e.score}</b></td>
-      <td>${fmt(e.accuracy * 100, 2)}%</td><td>${e.p_size}</td><td>${e.p_time}</td>
+      <td>${fmt(e.accuracy * 100, 2)}%</td><td>${e.f1 == null ? '—' : fmt(e.f1, 3)}</td><td>${e.p_size}</td><td>${e.p_time}</td>
       <td>${fmt(e.avg_time_s)}</td><td>${(e.size_bytes/1024).toFixed(1)}</td>
       <td class="status-${e.status}">${e.status}${e.used_fallback_env ? ' (venv)' : ''}</td>
       <td>${e.accuracy_source ?? '—'}</td><td>${e.sanity_match_pct == null ? '—' : e.sanity_match_pct.toFixed(1)}</td></tr>`).join('')
-      : '<tr><td colspan="11">No scoreable submissions yet.</td></tr>';
+      : '<tr><td colspan="12">No scoreable submissions yet.</td></tr>';
     $('subBody').innerHTML = subs.length ? subs.map(s => `
       <tr><td>${s.team_name}</td><td>${s.model_filename}</td>
       <td class="status-${s.status}">${s.status}</td>
@@ -140,7 +140,7 @@ async function refresh() {
       : '<tr><td colspan="5">None yet.</td></tr>';
     schedulePoll(subs);
   } catch (e) {
-    $('lbBody').innerHTML = `<tr><td colspan="11">Cannot reach API at ${API} — is the backend running?</td></tr>`;
+    $('lbBody').innerHTML = `<tr><td colspan="12">Cannot reach API at ${API} — is the backend running?</td></tr>`;
   }
 }
 // Poll only while a submission is still being evaluated; otherwise stay idle.
