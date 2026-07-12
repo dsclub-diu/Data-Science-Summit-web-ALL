@@ -33,7 +33,7 @@
 </head>
 <body>
 <div class="wrap">
-  <h1>🏆 Model Judging — Hackathon <span class="hint" style="float:right; font-weight:400"><a href="/custom-eval.html" style="color:var(--accent)">Custom evaluation →</a></span></h1>
+  <h1>🏆 Model Judging — Hackathon <span class="hint adminOnly" style="float:right; font-weight:400; display:none"><a href="/custom-eval.html?admin=1" style="color:var(--accent)">Custom evaluation →</a></span></h1>
 
   <div class="grid2">
     <div class="card">
@@ -58,7 +58,7 @@
       </form>
     </div>
 
-    <div class="card">
+    <div class="card adminOnly" style="display:none">
       <h2>Update test data (admin)</h2>
       <form id="testForm">
         <label>Test X csv</label>
@@ -72,7 +72,7 @@
     </div>
   </div>
 
-  <div class="card">
+  <div class="card adminOnly" style="display:none">
     <h2>Leaderboard <span class="hint">(refreshes while a submission is evaluating · score = accuracy×100 + Psize + Ptime)</span>
       <button style="margin:0 0 0 .8rem; padding:.25rem .8rem; font-size:.8rem" onclick="refresh()">Refresh</button></h2>
     <div class="scroll"><table>
@@ -84,7 +84,7 @@
     </table></div>
   </div>
 
-  <div class="card">
+  <div class="card adminOnly" style="display:none">
     <h2>F1 Leaderboard <span class="hint">(ranked by F1 score only — informational, not the official score)</span></h2>
     <div class="scroll"><table>
       <thead><tr>
@@ -94,7 +94,7 @@
     </table></div>
   </div>
 
-  <div class="card">
+  <div class="card adminOnly" style="display:none">
     <h2>All submissions</h2>
     <div class="scroll"><table>
       <thead><tr><th>Team</th><th>Submission ID</th><th>File</th><th>Status</th><th>Submitted</th><th>Error</th></tr></thead>
@@ -110,6 +110,10 @@ const API = localStorage.getItem('apiBase')
       : `http://${location.hostname || 'localhost'}:${location.hostname === 'localhost' || !location.hostname ? 8000 : 8001}`);
 const $ = id => document.getElementById(id);
 const fmt = (v, d=4) => v == null ? '—' : Number(v).toFixed(d);
+
+// Participant link shows only the submit form; add ?admin=1 to reveal leaderboards & admin tools.
+const IS_ADMIN = new URLSearchParams(location.search).has('admin');
+if (IS_ADMIN) document.querySelectorAll('.adminOnly').forEach(el => el.style.display = '');
 
 async function postForm(url, form, msgEl, method='POST') {
   const btn = form.querySelector('button'); btn.disabled = true;
@@ -131,6 +135,7 @@ $('submitForm').addEventListener('submit', e => { e.preventDefault(); postForm(A
 $('testForm').addEventListener('submit', e => { e.preventDefault(); postForm(API + '/api/test-data', e.target, $('testMsg'), 'PUT'); });
 
 async function refresh() {
+  if (!IS_ADMIN) return;  // participants only see the submit form — nothing to refresh
   try {
     const [lb, subs, health] = await Promise.all([
       fetch(API + '/api/leaderboard').then(r => r.json()),
