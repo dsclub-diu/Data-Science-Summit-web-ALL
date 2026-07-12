@@ -19,7 +19,7 @@ directly from the browser, no proxy needed.
 | `predictions_csv` | file | team's predictions on the test set (`.csv`) |
 | `requirements_txt` | file | pinned pip deps of their training env |
 | `metrics_csv` | file | team's model metrics (`.csv`) |
-| `test_x_csv` | file | the test X data (`.csv`) the model expects — the model is evaluated on this file; must have the same number of rows as the official test set |
+| `test_x_csv` | file | the team's test X data (`.csv`) — stored for reference only, any size accepted; evaluation runs on the official test set |
 
 ```bash
 curl -X POST https://dsummit-judge.duckdns.org/api/submissions \

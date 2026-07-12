@@ -161,9 +161,8 @@ def _evaluate_submission(sub_id: str) -> None:
     model_path = next(sub_dir.glob("model*"))
     our_preds = sub_dir / "our_predictions.csv"
     team_preds = sub_dir / "team_predictions.csv"
-    # teams upload the test X their pipeline expects; older submissions fall back to the global file
-    team_x = sub_dir / "test_x.csv"
-    x_path = team_x if team_x.exists() else TEST_X_PATH
+    # the team's uploaded test X is stored for reference only; evaluation uses the official file
+    x_path = TEST_X_PATH
 
     fields: dict = {"status": "completed", "error": None}
     try:
@@ -271,18 +270,9 @@ async def create_submission(
         shutil.copyfileobj(requirements_txt.file, f)
     with (sub_dir / "metrics.csv").open("wb") as f:
         shutil.copyfileobj(metrics_csv.file, f)
-    team_x_path = sub_dir / "test_x.csv"
-    with team_x_path.open("wb") as f:
+    # stored for reference only — evaluation always runs on the official test X
+    with (sub_dir / "team_test_x.csv").open("wb") as f:
         shutil.copyfileobj(test_x_csv.file, f)
-    try:
-        n_rows = len(pd.read_csv(team_x_path))
-    except Exception as e:
-        shutil.rmtree(sub_dir, ignore_errors=True)
-        raise HTTPException(400, f"test_x_csv is not a valid csv: {e}")
-    expected = len(pd.read_csv(TEST_Y_PATH)) if TEST_Y_PATH.exists() else None
-    if expected is not None and n_rows != expected:
-        shutil.rmtree(sub_dir, ignore_errors=True)
-        raise HTTPException(400, f"test_x_csv must have {expected} rows (got {n_rows}).")
 
     with db() as conn:
         conn.execute(
