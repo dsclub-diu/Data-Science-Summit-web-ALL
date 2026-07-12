@@ -82,6 +82,16 @@
   </div>
 
   <div class="card">
+    <h2>F1 Leaderboard <span class="hint">(ranked by F1 score only — informational, not the official score)</span></h2>
+    <div class="scroll"><table>
+      <thead><tr>
+        <th>#</th><th>Team</th><th>F1</th><th>Accuracy</th><th>Avg time (s)</th><th>Size (KB)</th><th>Official rank</th>
+      </tr></thead>
+      <tbody id="f1Body"><tr><td colspan="7">Loading…</td></tr></tbody>
+    </table></div>
+  </div>
+
+  <div class="card">
     <h2>All submissions</h2>
     <div class="scroll"><table>
       <thead><tr><th>Team</th><th>File</th><th>Status</th><th>Submitted</th><th>Error</th></tr></thead>
@@ -132,6 +142,12 @@ async function refresh() {
       <td class="status-${e.status}">${e.status}${e.used_fallback_env ? ' (venv)' : ''}</td>
       <td>${e.accuracy_source ?? '—'}</td><td>${e.sanity_match_pct == null ? '—' : e.sanity_match_pct.toFixed(1)}</td></tr>`).join('')
       : '<tr><td colspan="12">No scoreable submissions yet.</td></tr>';
+    const byF1 = lb.entries.filter(e => e.f1 != null).sort((a, b) => b.f1 - a.f1);
+    $('f1Body').innerHTML = byF1.length ? byF1.map((e, i) => `
+      <tr><td>${i + 1}</td><td>${e.team_name}</td><td><b>${fmt(e.f1, 3)}</b></td>
+      <td>${fmt(e.accuracy * 100, 2)}%</td><td>${fmt(e.avg_time_s)}</td>
+      <td>${(e.size_bytes/1024).toFixed(1)}</td><td>${e.rank}</td></tr>`).join('')
+      : '<tr><td colspan="7">No scoreable submissions yet.</td></tr>';
     $('subBody').innerHTML = subs.length ? subs.map(s => `
       <tr><td>${s.team_name}</td><td>${s.model_filename}</td>
       <td class="status-${s.status}">${s.status}</td>
