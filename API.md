@@ -20,6 +20,7 @@ directly from the browser, no proxy needed.
 | `requirements_txt` | file | pinned pip deps of their training env |
 | `metrics_csv` | file | team's model metrics (`.csv`) |
 | `test_x_csv` | file | the team's test X data (`.csv`) — stored for reference only, any size accepted; evaluation runs on the official test set |
+| `notebook_ipynb` | file (optional) | the team's notebook (`.ipynb`) — stored with the submission for review |
 
 ```bash
 curl -X POST https://dsummit-judge.duckdns.org/api/submissions \

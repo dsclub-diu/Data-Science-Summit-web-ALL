@@ -346,6 +346,7 @@ async def create_submission(
     metrics_csv: UploadFile = File(...),
     test_x_csv: UploadFile | None = File(None),
     test_x: UploadFile | None = File(None),  # alias: summit site sends this name
+    notebook_ipynb: UploadFile | None = File(None),  # optional so the summit proxy keeps working
 ):
     test_x_csv = test_x_csv or test_x
     if test_x_csv is None:
@@ -381,6 +382,11 @@ async def create_submission(
     # stored for reference only — evaluation always runs on the official test X
     with (sub_dir / "team_test_x.csv").open("wb") as f:
         shutil.copyfileobj(test_x_csv.file, f)
+    if notebook_ipynb is not None:
+        if not notebook_ipynb.filename.endswith(".ipynb"):
+            raise HTTPException(400, "notebook_ipynb must be an .ipynb file.")
+        with (sub_dir / "notebook.ipynb").open("wb") as f:
+            shutil.copyfileobj(notebook_ipynb.file, f)
 
     with db() as conn:
         conn.execute(
