@@ -81,6 +81,24 @@ def init_db() -> None:
             conn.execute("ALTER TABLE submissions ADD COLUMN email TEXT")
         if "f1" not in cols:
             conn.execute("ALTER TABLE submissions ADD COLUMN f1 REAL")
+        # manual evaluations on the team's own uploaded test X (run on demand, never automatic)
+        conn.execute(
+            """
+            CREATE TABLE IF NOT EXISTS custom_evals (
+                id TEXT PRIMARY KEY,
+                submission_id TEXT NOT NULL,
+                team_name TEXT,
+                status TEXT NOT NULL DEFAULT 'pending',
+                avg_time_s REAL,
+                load_time_s REAL,
+                accuracy REAL,
+                f1 REAL,
+                x_rows INTEGER,
+                error TEXT,
+                created_at TEXT NOT NULL
+            )
+            """
+        )
 
 
 init_db()
@@ -220,6 +238,63 @@ def _evaluate_submission(sub_id: str) -> None:
         conn.execute(f"UPDATE submissions SET {sets} WHERE id = ?", [*fields.values(), sub_id])
 
 
+def _team_x_path(sub_dir: Path) -> Path | None:
+    """The test X csv the team uploaded (name changed across versions)."""
+    for name in ("team_test_x.csv", "test_x.csv"):
+        p = sub_dir / name
+        if p.exists():
+            return p
+    return None
+
+
+def run_custom_eval(eval_id: str, sub_id: str) -> None:
+    with EVAL_LOCK:
+        _run_custom_eval(eval_id, sub_id)
+
+
+def _run_custom_eval(eval_id: str, sub_id: str) -> None:
+    sub_dir = SUBMISSIONS_DIR / sub_id
+    fields: dict = {"status": "completed", "error": None}
+    try:
+        model_path = next(sub_dir.glob("model*"))
+        team_x = _team_x_path(sub_dir)
+        if team_x is None:
+            raise RuntimeError("This submission has no uploaded test X csv.")
+        fields["x_rows"] = len(pd.read_csv(team_x))
+        preds_out = sub_dir / "custom_predictions.csv"
+
+        if (sub_dir / "requirements.txt").exists():
+            try:
+                py = _submission_env_python(sub_dir)
+                result = _run_runner(py, model_path, team_x, preds_out)
+            except Exception as e:
+                result = {"ok": False, "error": f"building team env failed: {e}"}
+            if not result.get("ok"):
+                first_error = result.get("error", "")
+                result = _run_runner(sys.executable, model_path, team_x, preds_out)
+                if not result.get("ok"):
+                    result["error"] = f"{first_error}\n--- server env also failed:\n{result.get('error', '')}"
+        else:
+            result = _run_runner(sys.executable, model_path, team_x, preds_out)
+
+        if result.get("ok"):
+            fields["avg_time_s"] = result["avg_time_s"]
+            fields["load_time_s"] = result["load_time_s"]
+            metrics = _compute_metrics(preds_out)
+            if metrics is not None:
+                fields["accuracy"], fields["f1"] = metrics
+        else:
+            fields["status"] = "failed_run"
+            fields["error"] = result.get("error", "unknown error")[-4000:]
+    except Exception as e:
+        fields["status"] = "error"
+        fields["error"] = str(e)[-4000:]
+
+    sets = ", ".join(f"{k} = ?" for k in fields)
+    with db() as conn:
+        conn.execute(f"UPDATE custom_evals SET {sets} WHERE id = ?", [*fields.values(), eval_id])
+
+
 # ------------------------------------------------------------------- routes
 
 @app.get("/api/health")
@@ -343,6 +418,39 @@ def leaderboard():
     for i, e in enumerate(entries, 1):
         e["rank"] = i
     return {"count": n, "entries": entries}
+
+
+@app.post("/api/submissions/{sub_id}/custom-eval", status_code=201)
+def start_custom_eval(sub_id: str, background: BackgroundTasks):
+    """Manually run a submission's model on the team's OWN uploaded test X."""
+    sub_dir = SUBMISSIONS_DIR / sub_id
+    with db() as conn:
+        row = conn.execute("SELECT team_name FROM submissions WHERE id = ?", (sub_id,)).fetchone()
+    if row is None or not sub_dir.exists():
+        raise HTTPException(404, "Submission not found")
+    if _team_x_path(sub_dir) is None:
+        raise HTTPException(400, "This submission has no uploaded test X csv.")
+    with db() as conn:
+        pending = conn.execute(
+            "SELECT 1 FROM custom_evals WHERE submission_id = ? AND status = 'pending'", (sub_id,)
+        ).fetchone()
+        if pending:
+            raise HTTPException(409, "A custom eval for this submission is already running.")
+        eval_id = uuid.uuid4().hex[:12]
+        conn.execute(
+            "INSERT INTO custom_evals (id, submission_id, team_name, status, created_at)"
+            " VALUES (?, ?, ?, 'pending', ?)",
+            (eval_id, sub_id, row["team_name"], datetime.now(timezone.utc).isoformat()),
+        )
+    background.add_task(run_custom_eval, eval_id, sub_id)
+    return {"id": eval_id, "submission_id": sub_id, "status": "pending"}
+
+
+@app.get("/api/custom-evals")
+def list_custom_evals():
+    with db() as conn:
+        rows = conn.execute("SELECT * FROM custom_evals ORDER BY created_at DESC").fetchall()
+    return [dict(r) for r in rows]
 
 
 @app.put("/api/test-data")
