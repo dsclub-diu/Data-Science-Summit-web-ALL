@@ -108,9 +108,9 @@ def _sanity_check(our_preds: Path, team_preds: Path) -> float | None:
         return None
 
 
-def _run_runner(python: str, model_path: Path, preds_out: Path, timeout: int = 600) -> dict:
+def _run_runner(python: str, model_path: Path, x_path: Path, preds_out: Path, timeout: int = 600) -> dict:
     proc = subprocess.run(
-        [python, str(RUNNER), str(model_path), str(TEST_X_PATH), str(preds_out), str(N_RUNS)],
+        [python, str(RUNNER), str(model_path), str(x_path), str(preds_out), str(N_RUNS)],
         capture_output=True,
         text=True,
         timeout=timeout,
@@ -153,6 +153,9 @@ def _evaluate_submission(sub_id: str) -> None:
     model_path = next(sub_dir.glob("model*"))
     our_preds = sub_dir / "our_predictions.csv"
     team_preds = sub_dir / "team_predictions.csv"
+    # teams upload the test X their pipeline expects; older submissions fall back to the global file
+    team_x = sub_dir / "test_x.csv"
+    x_path = team_x if team_x.exists() else TEST_X_PATH
 
     fields: dict = {"status": "completed", "error": None}
     try:
@@ -161,19 +164,19 @@ def _evaluate_submission(sub_id: str) -> None:
             # Team pinned their own environment — that is the source of truth.
             try:
                 py = _submission_env_python(sub_dir)
-                result = _run_runner(py, model_path, our_preds)
+                result = _run_runner(py, model_path, x_path, our_preds)
                 fields["used_fallback_env"] = 1
             except Exception as e:
                 result = {"ok": False, "error": f"building team env failed: {e}"}
             if not result.get("ok"):
                 first_error = result.get("error", "")
-                result = _run_runner(sys.executable, model_path, our_preds)
+                result = _run_runner(sys.executable, model_path, x_path, our_preds)
                 if result.get("ok"):
                     fields["used_fallback_env"] = 0
                 else:
                     result["error"] = f"{first_error}\n--- server env also failed:\n{result.get('error', '')}"
         else:
-            result = _run_runner(sys.executable, model_path, our_preds)
+            result = _run_runner(sys.executable, model_path, x_path, our_preds)
 
         if result.get("ok"):
             line = (
@@ -230,6 +233,7 @@ async def create_submission(
     predictions_csv: UploadFile = File(...),
     requirements_txt: UploadFile = File(...),
     metrics_csv: UploadFile = File(...),
+    test_x_csv: UploadFile = File(...),
 ):
     if not TEST_X_PATH.exists():
         raise HTTPException(400, "No test data uploaded yet (PUT /api/test-data first).")
@@ -237,7 +241,11 @@ async def create_submission(
         raise HTTPException(400, "Model file must be a .joblib file.")
     if "@" not in email or "." not in email.split("@")[-1]:
         raise HTTPException(400, "A valid email address is required.")
-    for upload, label in ((predictions_csv, "predictions_csv"), (metrics_csv, "metrics_csv")):
+    for upload, label in (
+        (predictions_csv, "predictions_csv"),
+        (metrics_csv, "metrics_csv"),
+        (test_x_csv, "test_x_csv"),
+    ):
         if not upload.filename.endswith(".csv"):
             raise HTTPException(400, f"{label} must be a .csv file.")
 
@@ -255,6 +263,18 @@ async def create_submission(
         shutil.copyfileobj(requirements_txt.file, f)
     with (sub_dir / "metrics.csv").open("wb") as f:
         shutil.copyfileobj(metrics_csv.file, f)
+    team_x_path = sub_dir / "test_x.csv"
+    with team_x_path.open("wb") as f:
+        shutil.copyfileobj(test_x_csv.file, f)
+    try:
+        n_rows = len(pd.read_csv(team_x_path))
+    except Exception as e:
+        shutil.rmtree(sub_dir, ignore_errors=True)
+        raise HTTPException(400, f"test_x_csv is not a valid csv: {e}")
+    expected = len(pd.read_csv(TEST_Y_PATH)) if TEST_Y_PATH.exists() else None
+    if expected is not None and n_rows != expected:
+        shutil.rmtree(sub_dir, ignore_errors=True)
+        raise HTTPException(400, f"test_x_csv must have {expected} rows (got {n_rows}).")
 
     with db() as conn:
         conn.execute(

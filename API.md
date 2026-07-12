@@ -19,6 +19,7 @@ directly from the browser, no proxy needed.
 | `predictions_csv` | file | team's predictions on the test set (`.csv`) |
 | `requirements_txt` | file | pinned pip deps of their training env |
 | `metrics_csv` | file | team's model metrics (`.csv`) |
+| `test_x_csv` | file | the test X data (`.csv`) the model expects — the model is evaluated on this file; must have the same number of rows as the official test set |
 
 ```bash
 curl -X POST https://dsummit-judge.duckdns.org/api/submissions \
@@ -27,7 +28,8 @@ curl -X POST https://dsummit-judge.duckdns.org/api/submissions \
   -F model_file=@best_model_pipeline.joblib \
   -F predictions_csv=@predictions.csv \
   -F requirements_txt=@requirements.txt \
-  -F metrics_csv=@metrics.csv
+  -F metrics_csv=@metrics.csv \
+  -F test_x_csv=@test_x.csv
 ```
 
 Response (`201`):
@@ -51,6 +53,7 @@ fd.append("model_file", modelInput.files[0]);     // .joblib only
 fd.append("predictions_csv", predsInput.files[0]);
 fd.append("requirements_txt", reqsInput.files[0]);
 fd.append("metrics_csv", metricsInput.files[0]);
+fd.append("test_x_csv", testXInput.files[0]);
 const res = await fetch("https://dsummit-judge.duckdns.org/api/submissions", {
   method: "POST",
   body: fd,                                        // no Content-Type header — browser sets it
