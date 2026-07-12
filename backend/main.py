@@ -9,6 +9,7 @@ Endpoints:
     GET  /api/health
 """
 import json
+import re
 import shutil
 import sqlite3
 import subprocess
@@ -483,6 +484,82 @@ def download_submission_file(sub_id: str, kind: str):
         raise HTTPException(404, f"This submission has no {kind} file")
     safe_team = "".join(c if c.isalnum() or c in "-_" else "_" for c in row["team_name"])[:40]
     return FileResponse(path, filename=f"{safe_team}_{sub_id}_{path.name}")
+
+
+def _notebook_metric_candidates(nb_path: Path) -> dict:
+    """Scan a notebook's cell outputs for printed accuracy / F1 values."""
+    try:
+        nb = json.loads(nb_path.read_text(errors="replace"))
+    except Exception:
+        return {}
+    chunks = []
+    for cell in nb.get("cells", []):
+        if cell.get("cell_type") != "code":
+            continue
+        for out in cell.get("outputs", []):
+            t = out.get("text") or (out.get("data") or {}).get("text/plain") or ""
+            chunks.append("".join(t) if isinstance(t, list) else str(t))
+    blob = "\n".join(chunks)
+    found = {"f1": set(), "accuracy": set()}
+    for m in re.finditer(r"(?i)\bf1(?:[\s_-]*score)?\b[^0-9\n]{0,25}([01](?:\.\d+)?)", blob):
+        found["f1"].add(round(float(m.group(1)), 4))
+    for m in re.finditer(r"(?i)\baccuracy\b[^0-9\n]{0,25}([01](?:\.\d+)?)", blob):
+        found["accuracy"].add(round(float(m.group(1)), 4))
+    # sklearn classification_report rows: "macro avg   prec  recall  f1  support"
+    for m in re.finditer(r"(?i)(?:macro|weighted)\s+avg\s+([\d.]+)\s+([\d.]+)\s+([\d.]+)", blob):
+        found["f1"].add(round(float(m.group(3)), 4))
+    return {k: sorted(v) for k, v in found.items()}
+
+
+def _closest(candidates: list, target: float, tol: float = 0.011):
+    hits = [c for c in candidates if abs(c - target) <= tol]
+    return min(hits, key=lambda c: abs(c - target)) if hits else None
+
+
+@app.get("/api/final-leaderboard")
+def final_leaderboard():
+    """Teams sorted by self-reported F1, with notebook cross-verification and model size."""
+    with db() as conn:
+        rows = [dict(r) for r in conn.execute("SELECT * FROM submissions").fetchall()]
+    entries = []
+    for r in rows:
+        sub_dir = SUBMISSIONS_DIR / r["id"]
+        metrics_path = _submission_file(sub_dir, "metrics")
+        reported = _parse_team_metrics(metrics_path) if metrics_path else {}
+        nb_path = _submission_file(sub_dir, "notebook")
+        nb = _notebook_metric_candidates(nb_path) if nb_path else {}
+        rep_f1, rep_acc = reported.get("f1"), reported.get("accuracy")
+        checks = {}
+        for name, val in (("f1", rep_f1), ("accuracy", rep_acc)):
+            if val is None:
+                checks[name] = "not_reported"
+            elif not nb:
+                checks[name] = "no_notebook"
+            elif _closest(nb.get(name, []), val) is not None:
+                checks[name] = "verified"
+            else:
+                checks[name] = "not_found"
+        entries.append(
+            {
+                "id": r["id"],
+                "team_name": r["team_name"],
+                "reported_f1": rep_f1,
+                "reported_accuracy": rep_acc,
+                "verify_f1": checks["f1"],
+                "verify_accuracy": checks["accuracy"],
+                "notebook_f1_candidates": nb.get("f1", []),
+                "notebook_accuracy_candidates": nb.get("accuracy", []),
+                "our_f1": r["f1"],
+                "our_accuracy": r["accuracy"],
+                "size_bytes": r["size_bytes"],
+                "official_status": r["status"],
+                "has_notebook": nb_path is not None,
+            }
+        )
+    entries.sort(key=lambda e: e["reported_f1"] if e["reported_f1"] is not None else -1, reverse=True)
+    for i, e in enumerate(entries, 1):
+        e["rank"] = i
+    return {"count": len(entries), "entries": entries}
 
 
 @app.get("/api/team-metrics")

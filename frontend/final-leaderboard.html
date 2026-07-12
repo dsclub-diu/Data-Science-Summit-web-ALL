@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Final Leaderboard — F1 (verified)</title>
+<style>
+  :root { --bg:#0f1117; --card:#181b23; --line:#2a2f3c; --text:#e8eaf0; --muted:#9aa1b2; --accent:#5b8cff; --ok:#3fbf7f; --bad:#e5646c; --warn:#e0b34c; }
+  * { box-sizing:border-box; margin:0; }
+  body { font:15px/1.5 -apple-system, "Segoe UI", sans-serif; background:var(--bg); color:var(--text); padding:2rem 1rem; }
+  .wrap { max-width:1200px; margin:0 auto; display:grid; gap:1.5rem; }
+  h1 { font-size:1.4rem; }
+  a { color:var(--accent); }
+  .card { background:var(--card); border:1px solid var(--line); border-radius:12px; padding:1.25rem; }
+  .scroll { overflow-x:auto; }
+  table { width:100%; border-collapse:collapse; font-size:.88rem; white-space:nowrap; }
+  th, td { padding:.5rem .7rem; text-align:left; border-bottom:1px solid var(--line); }
+  th { color:var(--muted); font-weight:600; font-size:.78rem; text-transform:uppercase; letter-spacing:.04em; }
+  .hint { font-size:.8rem; color:var(--muted); }
+  .v-verified { color:var(--ok); } .v-not_found { color:var(--bad); }
+  .v-no_notebook, .v-not_reported { color:var(--warn); }
+  nav a { margin-right:1rem; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>🏁 Final Leaderboard <span class="hint">— sorted by team-reported F1 · cross-checked against notebook outputs</span></h1>
+  <nav class="hint">
+    <a href="/?admin=1">← Official leaderboard</a>
+    <a href="/notebooks.html">Notebooks</a>
+    <a href="/metrics.html">Team metrics</a>
+    <a href="/custom-eval.html">Custom evaluation</a>
+  </nav>
+  <div class="card">
+    <p class="hint" style="margin-bottom:.8rem">
+      <b class="v-verified">✓ verified</b> — the reported value (±0.011) appears in the notebook's printed outputs ·
+      <b class="v-not_found">✗ not found</b> — reported value doesn't appear in any notebook output ·
+      <b class="v-no_notebook">— </b> no notebook / not reported.
+      "Our F1 / Acc" = measured by the judging server on the official test set.
+    </p>
+    <div class="scroll"><table>
+      <thead><tr>
+        <th>#</th><th>Team</th><th>Submission ID</th>
+        <th>F1 (reported)</th><th>F1 in notebook</th>
+        <th>Acc (reported)</th><th>Acc in notebook</th>
+        <th>Our F1</th><th>Our Acc</th>
+        <th>Model size (KB)</th><th>Notebook</th>
+      </tr></thead>
+      <tbody id="body"><tr><td colspan="11">Loading…</td></tr></tbody>
+    </table></div>
+  </div>
+</div>
+<script src="/preview.js"></script>
+<script>
+const API = window.API = localStorage.getItem('apiBase')
+  || (!location.port || location.port === '80' || location.port === '443' ? ''
+      : `http://${location.hostname || 'localhost'}:${location.hostname === 'localhost' || !location.hostname ? 8000 : 8001}`);
+const esc = t => (t||'').replaceAll('&','&amp;').replaceAll('<','&lt;');
+const fmt = (v, d=4) => v == null ? '—' : Number(v).toFixed(d);
+const MARK = { verified: '✓ verified', not_found: '✗ not found', no_notebook: '— no notebook', not_reported: '— not reported' };
+const mark = (v, cands) => `<span class="v-${v}" title="found in notebook: ${cands.join(', ') || 'nothing'}">${MARK[v]}</span>`;
+
+fetch(API + '/api/final-leaderboard').then(r => r.json()).then(d => {
+  document.getElementById('body').innerHTML = d.entries.length ? d.entries.map(e => `
+    <tr><td>${e.rank}</td><td>${esc(e.team_name)}</td><td class="hint">${e.id}</td>
+    <td><b>${fmt(e.reported_f1)}</b></td><td>${mark(e.verify_f1, e.notebook_f1_candidates)}</td>
+    <td>${fmt(e.reported_accuracy)}</td><td>${mark(e.verify_accuracy, e.notebook_accuracy_candidates)}</td>
+    <td>${fmt(e.our_f1)}</td><td>${fmt(e.our_accuracy)}</td>
+    <td>${(e.size_bytes/1024).toFixed(1)}</td>
+    <td>${e.has_notebook ? `<a href="javascript:void(0)" onclick="previewFile('${e.id}','notebook','${esc(e.team_name).replaceAll("'","")} — notebook.ipynb')">👁 preview</a>` : '<span class="hint">—</span>'}</td>
+    </tr>`).join('')
+    : '<tr><td colspan="11">No submissions.</td></tr>';
+}).catch(() => document.getElementById('body').innerHTML = '<tr><td colspan="11">Cannot reach API.</td></tr>');
+</script>
+</body>
+</html>
