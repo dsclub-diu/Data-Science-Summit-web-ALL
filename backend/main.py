@@ -315,8 +315,12 @@ async def create_submission(
     predictions_csv: UploadFile = File(...),
     requirements_txt: UploadFile = File(...),
     metrics_csv: UploadFile = File(...),
-    test_x_csv: UploadFile = File(...),
+    test_x_csv: UploadFile | None = File(None),
+    test_x: UploadFile | None = File(None),  # alias: summit site sends this name
 ):
+    test_x_csv = test_x_csv or test_x
+    if test_x_csv is None:
+        raise HTTPException(422, "Field required: test_x_csv (or test_x)")
     if not TEST_X_PATH.exists():
         raise HTTPException(400, "No test data uploaded yet (PUT /api/test-data first).")
     if not model_file.filename.endswith(".joblib"):
