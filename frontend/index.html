@@ -77,10 +77,10 @@
       <button style="margin:0 0 0 .8rem; padding:.25rem .8rem; font-size:.8rem" onclick="refresh()">Refresh</button></h2>
     <div class="scroll"><table>
       <thead><tr>
-        <th>#</th><th>Team</th><th>Score</th><th>Accuracy</th><th>F1</th><th>Psize</th><th>Ptime</th>
+        <th>#</th><th>Team</th><th>Submission ID</th><th>Score</th><th>Accuracy</th><th>F1</th><th>Psize</th><th>Ptime</th>
         <th>Avg time (s)</th><th>Size (KB)</th><th>Status</th><th>Acc. source</th><th>Sanity %</th>
       </tr></thead>
-      <tbody id="lbBody"><tr><td colspan="12">Loading…</td></tr></tbody>
+      <tbody id="lbBody"><tr><td colspan="13">Loading…</td></tr></tbody>
     </table></div>
   </div>
 
@@ -88,16 +88,16 @@
     <h2>F1 Leaderboard <span class="hint">(ranked by F1 score only — informational, not the official score)</span></h2>
     <div class="scroll"><table>
       <thead><tr>
-        <th>#</th><th>Team</th><th>F1</th><th>Accuracy</th><th>Avg time (s)</th><th>Size (KB)</th><th>Official rank</th>
+        <th>#</th><th>Team</th><th>Submission ID</th><th>F1</th><th>Accuracy</th><th>Avg time (s)</th><th>Size (KB)</th><th>Official rank</th>
       </tr></thead>
-      <tbody id="f1Body"><tr><td colspan="7">Loading…</td></tr></tbody>
+      <tbody id="f1Body"><tr><td colspan="8">Loading…</td></tr></tbody>
     </table></div>
   </div>
 
   <div class="card">
     <h2>All submissions</h2>
     <div class="scroll"><table>
-      <thead><tr><th>Team</th><th>File</th><th>Status</th><th>Submitted</th><th>Error</th></tr></thead>
+      <thead><tr><th>Team</th><th>Submission ID</th><th>File</th><th>Status</th><th>Submitted</th><th>Error</th></tr></thead>
       <tbody id="subBody"></tbody>
     </table></div>
   </div>
@@ -139,31 +139,31 @@ async function refresh() {
     ]);
     $('healthHint').textContent = `Test X rows: ${health.test_x_rows ?? 'none'} · ground truth uploaded: ${health.test_y_present ? 'yes' : 'NO — accuracy cannot be computed yet'}`;
     $('lbBody').innerHTML = lb.entries.length ? lb.entries.map(e => `
-      <tr><td>${e.rank}</td><td>${e.team_name}</td><td><b>${e.score}</b></td>
+      <tr><td>${e.rank}</td><td>${e.team_name}</td><td class="hint">${e.id}</td><td><b>${e.score}</b></td>
       <td>${fmt(e.accuracy * 100, 2)}%</td><td>${e.f1 == null ? '—' : fmt(e.f1, 3)}</td><td>${e.p_size}</td><td>${e.p_time}</td>
       <td>${fmt(e.avg_time_s)}</td><td>${(e.size_bytes/1024).toFixed(1)}</td>
       <td class="status-${e.status}">${e.status}${e.used_fallback_env ? ' (venv)' : ''}</td>
       <td>${e.accuracy_source ?? '—'}</td><td>${e.sanity_match_pct == null ? '—' : e.sanity_match_pct.toFixed(1)}</td></tr>`).join('')
-      : '<tr><td colspan="12">No scoreable submissions yet.</td></tr>';
+      : '<tr><td colspan="13">No scoreable submissions yet.</td></tr>';
     const byF1 = lb.entries.filter(e => e.f1 != null).sort((a, b) => b.f1 - a.f1);
     $('f1Body').innerHTML = byF1.length ? byF1.map((e, i) => `
-      <tr><td>${i + 1}</td><td>${e.team_name}</td><td><b>${fmt(e.f1, 3)}</b></td>
+      <tr><td>${i + 1}</td><td>${e.team_name}</td><td class="hint">${e.id}</td><td><b>${fmt(e.f1, 3)}</b></td>
       <td>${fmt(e.accuracy * 100, 2)}%</td><td>${fmt(e.avg_time_s)}</td>
       <td>${(e.size_bytes/1024).toFixed(1)}</td><td>${e.rank}</td></tr>`).join('')
-      : '<tr><td colspan="7">No scoreable submissions yet.</td></tr>';
+      : '<tr><td colspan="8">No scoreable submissions yet.</td></tr>';
     const esc = t => (t||'').replaceAll('&','&amp;').replaceAll('<','&lt;');
     const openErrs = new Set([...document.querySelectorAll('tr[id^="err-"]')].filter(r => r.style.display !== 'none').map(r => r.id));
     $('subBody').innerHTML = subs.length ? subs.map(s => `
-      <tr><td>${esc(s.team_name)}</td><td>${esc(s.model_filename)}</td>
+      <tr><td>${esc(s.team_name)}</td><td class="hint">${s.id}</td><td>${esc(s.model_filename)}</td>
       <td class="status-${s.status}">${s.status}</td>
       <td>${new Date(s.created_at).toLocaleString()}</td>
       <td>${s.error ? `<span class="errbtn" onclick="toggleErr('${s.id}')">${esc(s.error.slice(0,60))}… (click to expand)</span>` : '—'}</td></tr>
-      ${s.error ? `<tr id="err-${s.id}" style="display:none"><td colspan="5"><pre class="err">${esc(s.error)}</pre></td></tr>` : ''}`).join('')
-      : '<tr><td colspan="5">None yet.</td></tr>';
+      ${s.error ? `<tr id="err-${s.id}" style="display:none"><td colspan="6"><pre class="err">${esc(s.error)}</pre></td></tr>` : ''}`).join('')
+      : '<tr><td colspan="6">None yet.</td></tr>';
     openErrs.forEach(id => { const r = document.getElementById(id); if (r) r.style.display = ''; });
     schedulePoll(subs);
   } catch (e) {
-    $('lbBody').innerHTML = `<tr><td colspan="12">Cannot reach API at ${API} — is the backend running?</td></tr>`;
+    $('lbBody').innerHTML = `<tr><td colspan="13">Cannot reach API at ${API} — is the backend running?</td></tr>`;
   }
 }
 function toggleErr(id) {
