@@ -26,6 +26,9 @@
   .grid2 { display:grid; gap:1.5rem; grid-template-columns:1fr 1fr; }
   @media (max-width:800px){ .grid2 { grid-template-columns:1fr; } }
   .hint { font-size:.8rem; color:var(--muted); }
+  .errbtn { color:var(--bad); cursor:pointer; text-decoration:underline dotted; }
+  pre.err { white-space:pre-wrap; word-break:break-word; background:var(--bg); border:1px solid var(--bad);
+            border-radius:8px; padding:.7rem; font-size:.75rem; color:var(--bad); max-height:300px; overflow-y:auto; }
 </style>
 </head>
 <body>
@@ -148,16 +151,24 @@ async function refresh() {
       <td>${fmt(e.accuracy * 100, 2)}%</td><td>${fmt(e.avg_time_s)}</td>
       <td>${(e.size_bytes/1024).toFixed(1)}</td><td>${e.rank}</td></tr>`).join('')
       : '<tr><td colspan="7">No scoreable submissions yet.</td></tr>';
+    const esc = t => (t||'').replaceAll('&','&amp;').replaceAll('<','&lt;');
+    const openErrs = new Set([...document.querySelectorAll('tr[id^="err-"]')].filter(r => r.style.display !== 'none').map(r => r.id));
     $('subBody').innerHTML = subs.length ? subs.map(s => `
-      <tr><td>${s.team_name}</td><td>${s.model_filename}</td>
+      <tr><td>${esc(s.team_name)}</td><td>${esc(s.model_filename)}</td>
       <td class="status-${s.status}">${s.status}</td>
       <td>${new Date(s.created_at).toLocaleString()}</td>
-      <td title="${(s.error||'').replaceAll('"','&quot;')}">${s.error ? s.error.slice(0,80)+'…' : '—'}</td></tr>`).join('')
+      <td>${s.error ? `<span class="errbtn" onclick="toggleErr('${s.id}')">${esc(s.error.slice(0,60))}… (click to expand)</span>` : '—'}</td></tr>
+      ${s.error ? `<tr id="err-${s.id}" style="display:none"><td colspan="5"><pre class="err">${esc(s.error)}</pre></td></tr>` : ''}`).join('')
       : '<tr><td colspan="5">None yet.</td></tr>';
+    openErrs.forEach(id => { const r = document.getElementById(id); if (r) r.style.display = ''; });
     schedulePoll(subs);
   } catch (e) {
     $('lbBody').innerHTML = `<tr><td colspan="12">Cannot reach API at ${API} — is the backend running?</td></tr>`;
   }
+}
+function toggleErr(id) {
+  const row = document.getElementById('err-' + id);
+  if (row) row.style.display = row.style.display === 'none' ? '' : 'none';
 }
 // Poll only while a submission is still being evaluated; otherwise stay idle.
 let pollTimer = null;
