@@ -1,0 +1,28 @@
+# --- SECRETS: never commit these ---
+# SSH private key to the VPS
+dsummit_ed25519
+dsummit_ed25519.pub
+*_ed25519
+*_ed25519.pub
+*.pem
+id_rsa*
+# The competition answer key and the data-generating formula (the "answers").
+# They live in the parent folder, but block them here too in case they are
+# ever copied in.
+test-y.csv
+train.py
+# Environment files hold the WORKER_TOKEN and other secrets — never commit.
+.env
+.env.*
+
+# --- Generated at runtime (not source) ---
+submissions/
+results/
+portal_data/
+leaderboard.csv
+
+# --- Python / macOS junk ---
+__pycache__/
+*.pyc
+*.pyo
+.DS_Store
