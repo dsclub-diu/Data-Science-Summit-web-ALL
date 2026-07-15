@@ -32,11 +32,17 @@ export default function Navbar() {
           { label: 'Events', href: '#events' },
           { label: 'Schedule', href: '#schedule' },
           { label: 'Previous Summits', href: '#previous-summits' },
+          { label: 'My Seat', href: '/my-seat' },
           { label: 'Results', href: '#results', action: openResults },
           // { label: 'About', href: '#about' },
      ];
 
      const handleSmoothScroll = (e, link) => {
+          // Real routes navigate normally; only hash links smooth-scroll
+          if (link.href.startsWith('/')) {
+               closeMenu();
+               return;
+          }
           e.preventDefault();
           if (link.action) {
                link.action();
