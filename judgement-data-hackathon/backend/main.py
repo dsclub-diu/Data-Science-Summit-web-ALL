@@ -1,0 +1,695 @@
+"""Hackathon judging backend.
+
+Endpoints:
+    POST /api/submissions          - upload team name + joblib model (+ optional predictions csv, requirements.txt)
+    GET  /api/submissions          - raw list of submissions
+    GET  /api/submissions/{id}     - one submission
+    GET  /api/leaderboard          - scored + ranked results
+    PUT  /api/test-data            - replace test X (and optionally test y) csvs
+    GET  /api/health
+"""
+import json
+import re
+import shutil
+import sqlite3
+import subprocess
+import sys
+import threading
+import uuid
+from datetime import datetime, timezone
+from pathlib import Path
+
+import pandas as pd
+from fastapi import BackgroundTasks, FastAPI, File, Form, HTTPException, Request, UploadFile
+from fastapi.exception_handlers import request_validation_exception_handler
+from fastapi.exceptions import RequestValidationError
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import FileResponse
+
+BASE_DIR = Path(__file__).resolve().parent.parent
+DATA_DIR = BASE_DIR / "data"
+SUBMISSIONS_DIR = DATA_DIR / "submissions"
+TEST_X_PATH = DATA_DIR / "test_x.csv"
+TEST_Y_PATH = DATA_DIR / "test_y.csv"
+DB_PATH = DATA_DIR / "results.db"
+RUNNER = Path(__file__).resolve().parent / "runner.py"
+N_RUNS = 100  # per spec discussion: 10 for now (real evaluation uses 100)
+
+app = FastAPI(title="Model Judging API")
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[
+        "https://data-science-summit-2026.vercel.app",
+        "https://dsummit-judge.duckdns.org",
+        "http://localhost:3000",
+        "http://165.101.22.29:3000",
+    ],
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+
+def db() -> sqlite3.Connection:
+    conn = sqlite3.connect(DB_PATH)
+    conn.row_factory = sqlite3.Row
+    return conn
+
+
+def init_db() -> None:
+    SUBMISSIONS_DIR.mkdir(parents=True, exist_ok=True)
+    with db() as conn:
+        conn.execute(
+            """
+            CREATE TABLE IF NOT EXISTS submissions (
+                id TEXT PRIMARY KEY,
+                team_name TEXT NOT NULL,
+                email TEXT,
+                model_filename TEXT NOT NULL,
+                size_bytes INTEGER NOT NULL,
+                status TEXT NOT NULL DEFAULT 'pending',
+                avg_time_s REAL,
+                load_time_s REAL,
+                accuracy REAL,
+                f1 REAL,
+                accuracy_source TEXT,
+                sanity_match_pct REAL,
+                used_fallback_env INTEGER DEFAULT 0,
+                error TEXT,
+                created_at TEXT NOT NULL
+            )
+            """
+        )
+        # migrations for DBs created before newer columns existed
+        cols = [r[1] for r in conn.execute("PRAGMA table_info(submissions)")]
+        if "email" not in cols:
+            conn.execute("ALTER TABLE submissions ADD COLUMN email TEXT")
+        if "f1" not in cols:
+            conn.execute("ALTER TABLE submissions ADD COLUMN f1 REAL")
+        # manual evaluations on the team's own uploaded test X (run on demand, never automatic)
+        conn.execute(
+            """
+            CREATE TABLE IF NOT EXISTS custom_evals (
+                id TEXT PRIMARY KEY,
+                submission_id TEXT NOT NULL,
+                team_name TEXT,
+                status TEXT NOT NULL DEFAULT 'pending',
+                avg_time_s REAL,
+                load_time_s REAL,
+                accuracy REAL,
+                f1 REAL,
+                x_rows INTEGER,
+                error TEXT,
+                created_at TEXT NOT NULL
+            )
+            """
+        )
+
+
+init_db()
+
+
+@app.exception_handler(RequestValidationError)
+async def log_422(request: Request, exc: RequestValidationError):
+    """Log which fields failed validation — helps debug integrations mid-event."""
+    summary = [
+        {"field": ".".join(str(p) for p in e.get("loc", [])), "error": e.get("msg")}
+        for e in exc.errors()
+    ]
+    print(f"[422] {request.method} {request.url.path} from {request.client.host}: {summary}", flush=True)
+    return await request_validation_exception_handler(request, exc)
+
+
+@app.on_event("startup")
+def requeue_pending() -> None:
+    """Re-run evaluations that were stranded 'pending' by a server restart."""
+    with db() as conn:
+        stuck = [r[0] for r in conn.execute("SELECT id FROM submissions WHERE status = 'pending'")]
+        stuck_evals = conn.execute(
+            "SELECT id, submission_id FROM custom_evals WHERE status = 'pending'"
+        ).fetchall()
+    for sid in stuck:
+        threading.Thread(target=evaluate_submission, args=(sid,), daemon=True).start()
+    for eval_id, sub_id in stuck_evals:
+        threading.Thread(target=run_custom_eval, args=(eval_id, sub_id), daemon=True).start()
+    if stuck or stuck_evals:
+        print(f"[startup] requeued {len(stuck)} submissions, {len(stuck_evals)} custom evals", flush=True)
+
+
+# ---------------------------------------------------------------- evaluation
+
+def _compute_metrics(pred_csv: Path) -> tuple[float, float] | None:
+    """(accuracy, F1 for positive class '1') of a predictions csv vs ground truth."""
+    if not TEST_Y_PATH.exists():
+        return None
+    y_true = pd.read_csv(TEST_Y_PATH).iloc[:, 0].values.astype(str)
+    y_pred = pd.read_csv(pred_csv).iloc[:, 0].values.astype(str)
+    if len(y_true) != len(y_pred):
+        return None
+    accuracy = float((y_true == y_pred).mean())
+    tp = int(((y_pred == "1") & (y_true == "1")).sum())
+    fp = int(((y_pred == "1") & (y_true != "1")).sum())
+    fn = int(((y_pred != "1") & (y_true == "1")).sum())
+    f1 = 2 * tp / (2 * tp + fp + fn) if (2 * tp + fp + fn) else 0.0
+    return accuracy, float(f1)
+
+
+def _sanity_check(our_preds: Path, team_preds: Path) -> float | None:
+    """% agreement between our run's predictions and the team's uploaded csv."""
+    try:
+        a = pd.read_csv(our_preds).iloc[:, 0]
+        b = pd.read_csv(team_preds).iloc[:, 0]
+        if len(a) != len(b):
+            return None
+        return float((a.values.astype(str) == b.values.astype(str)).mean()) * 100
+    except Exception:
+        return None
+
+
+def _run_runner(python: str, model_path: Path, x_path: Path, preds_out: Path, timeout: int = 600) -> dict:
+    proc = subprocess.run(
+        [python, str(RUNNER), str(model_path), str(x_path), str(preds_out), str(N_RUNS)],
+        capture_output=True,
+        text=True,
+        timeout=timeout,
+    )
+    out = proc.stdout.strip().splitlines()
+    if out:
+        try:
+            return json.loads(out[-1])
+        except json.JSONDecodeError:
+            pass
+    return {"ok": False, "error": proc.stderr[-4000:] or "runner produced no output"}
+
+
+def _submission_env_python(sub_dir: Path) -> str:
+    """Create a per-submission venv from the team's requirements.txt."""
+    venv_dir = sub_dir / "venv"
+    if not venv_dir.exists():
+        subprocess.run([sys.executable, "-m", "venv", str(venv_dir)], check=True, timeout=300)
+    py = str(venv_dir / "bin" / "python")
+    req = sub_dir / "requirements.txt"
+    if req.exists():
+        subprocess.run([py, "-m", "pip", "install", "--quiet", "-r", str(req)], check=True, timeout=900)
+    # the runner itself needs these, whatever the team pinned
+    subprocess.run([py, "-m", "pip", "install", "--quiet", "pandas", "joblib"], check=True, timeout=900)
+    return py
+
+
+# Evaluations run one at a time so concurrent submissions can't steal CPU from
+# each other and skew the timed runs (Ptime must be measured on a quiet machine).
+EVAL_LOCK = threading.Lock()
+
+
+def evaluate_submission(sub_id: str) -> None:
+    with EVAL_LOCK:
+        _evaluate_submission(sub_id)
+
+
+def _evaluate_submission(sub_id: str) -> None:
+    sub_dir = SUBMISSIONS_DIR / sub_id
+    model_path = next(sub_dir.glob("model*"))
+    our_preds = sub_dir / "our_predictions.csv"
+    team_preds = sub_dir / "team_predictions.csv"
+    # the team's uploaded test X is stored for reference only; evaluation uses the official file
+    x_path = TEST_X_PATH
+
+    fields: dict = {"status": "completed", "error": None}
+    try:
+        has_reqs = (sub_dir / "requirements.txt").exists()
+        if has_reqs:
+            # Team pinned their own environment — that is the source of truth.
+            try:
+                py = _submission_env_python(sub_dir)
+                result = _run_runner(py, model_path, x_path, our_preds)
+                fields["used_fallback_env"] = 1
+            except Exception as e:
+                result = {"ok": False, "error": f"building team env failed: {e}"}
+            if not result.get("ok"):
+                first_error = result.get("error", "")
+                result = _run_runner(sys.executable, model_path, x_path, our_preds)
+                if result.get("ok"):
+                    fields["used_fallback_env"] = 0
+                else:
+                    result["error"] = f"{first_error}\n--- server env also failed:\n{result.get('error', '')}"
+        else:
+            result = _run_runner(sys.executable, model_path, x_path, our_preds)
+
+        if result.get("ok"):
+            line = (
+                f"[eval {sub_id}] ran predict {len(result['times_s'])}x "
+                f"(target {N_RUNS}): times={[round(t, 5) for t in result['times_s']]} "
+                f"avg={result['avg_time_s']:.5f}s"
+            )
+            print(line, flush=True)
+            with (DATA_DIR / "eval.log").open("a") as f:
+                f.write(f"{datetime.now(timezone.utc).isoformat()} {line}\n")
+            fields["avg_time_s"] = result["avg_time_s"]
+            fields["load_time_s"] = result["load_time_s"]
+            metrics = _compute_metrics(our_preds)
+            if metrics is not None:
+                fields["accuracy"], fields["f1"] = metrics
+                fields["accuracy_source"] = "our_run"
+            if team_preds.exists():
+                fields["sanity_match_pct"] = _sanity_check(our_preds, team_preds)
+        else:
+            # Model wouldn't run anywhere: fall back to the team's uploaded predictions.
+            fields["status"] = "failed_run"
+            fields["error"] = result.get("error", "unknown error")[-4000:]
+            if team_preds.exists():
+                metrics = _compute_metrics(team_preds)
+                if metrics is not None:
+                    fields["accuracy"], fields["f1"] = metrics
+                    fields["accuracy_source"] = "team_csv"
+    except Exception as e:
+        fields["status"] = "error"
+        fields["error"] = str(e)[-4000:]
+
+    sets = ", ".join(f"{k} = ?" for k in fields)
+    with db() as conn:
+        conn.execute(f"UPDATE submissions SET {sets} WHERE id = ?", [*fields.values(), sub_id])
+
+
+def _team_x_path(sub_dir: Path) -> Path | None:
+    """The test X csv the team uploaded (name changed across versions)."""
+    for name in ("team_test_x.csv", "test_x.csv"):
+        p = sub_dir / name
+        if p.exists():
+            return p
+    return None
+
+
+def _submission_file(sub_dir: Path, kind: str) -> Path | None:
+    """Resolve a downloadable submission file by kind."""
+    if kind == "test_x":
+        return _team_x_path(sub_dir)
+    if kind == "model":
+        return next(sub_dir.glob("model*"), None)
+    fixed = {
+        "notebook": "notebook.ipynb",
+        "metrics": "metrics.csv",
+        "predictions": "team_predictions.csv",
+        "requirements": "requirements.txt",
+    }
+    if kind not in fixed:
+        return None
+    p = sub_dir / fixed[kind]
+    return p if p.exists() else None
+
+
+def _parse_team_metrics(path: Path) -> dict:
+    """Best-effort parse of a team's metrics.csv into {metric: value}.
+
+    Supports one-row wide format (accuracy,precision,...) and two-column
+    long format (metric,value)."""
+    try:
+        df = pd.read_csv(path)
+        if df.shape[1] == 2 and df.shape[0] > 1:
+            pairs = zip(df.iloc[:, 0], df.iloc[:, 1])
+        elif df.shape[0] >= 1:
+            pairs = zip(df.columns, df.iloc[0])
+        else:
+            return {}
+        out = {}
+        for k, v in pairs:
+            key = str(k).strip().lower()
+            if key.replace(" ", "").replace("-", "").replace("_", "") in ("f1", "f1score"):
+                key = "f1"
+            try:
+                out[key] = float(v)
+            except (TypeError, ValueError):
+                continue
+        return out
+    except Exception:
+        return {}
+
+
+def run_custom_eval(eval_id: str, sub_id: str) -> None:
+    with EVAL_LOCK:
+        _run_custom_eval(eval_id, sub_id)
+
+
+def _run_custom_eval(eval_id: str, sub_id: str) -> None:
+    sub_dir = SUBMISSIONS_DIR / sub_id
+    fields: dict = {"status": "completed", "error": None}
+    try:
+        model_path = next(sub_dir.glob("model*"))
+        team_x = _team_x_path(sub_dir)
+        if team_x is None:
+            raise RuntimeError("This submission has no uploaded test X csv.")
+        fields["x_rows"] = len(pd.read_csv(team_x))
+        preds_out = sub_dir / "custom_predictions.csv"
+
+        if (sub_dir / "requirements.txt").exists():
+            try:
+                py = _submission_env_python(sub_dir)
+                result = _run_runner(py, model_path, team_x, preds_out)
+            except Exception as e:
+                result = {"ok": False, "error": f"building team env failed: {e}"}
+            if not result.get("ok"):
+                first_error = result.get("error", "")
+                result = _run_runner(sys.executable, model_path, team_x, preds_out)
+                if not result.get("ok"):
+                    result["error"] = f"{first_error}\n--- server env also failed:\n{result.get('error', '')}"
+        else:
+            result = _run_runner(sys.executable, model_path, team_x, preds_out)
+
+        if result.get("ok"):
+            fields["avg_time_s"] = result["avg_time_s"]
+            fields["load_time_s"] = result["load_time_s"]
+            metrics = _compute_metrics(preds_out)
+            if metrics is not None:
+                fields["accuracy"], fields["f1"] = metrics
+        else:
+            fields["status"] = "failed_run"
+            fields["error"] = result.get("error", "unknown error")[-4000:]
+    except Exception as e:
+        fields["status"] = "error"
+        fields["error"] = str(e)[-4000:]
+
+    sets = ", ".join(f"{k} = ?" for k in fields)
+    with db() as conn:
+        conn.execute(f"UPDATE custom_evals SET {sets} WHERE id = ?", [*fields.values(), eval_id])
+
+
+# ------------------------------------------------------------------- routes
+
+@app.get("/api/health")
+def health():
+    return {
+        "ok": True,
+        "test_x_rows": len(pd.read_csv(TEST_X_PATH)) if TEST_X_PATH.exists() else None,
+        "test_y_present": TEST_Y_PATH.exists(),
+    }
+
+
+@app.post("/api/submissions", status_code=201)
+async def create_submission(
+    background: BackgroundTasks,
+    team_name: str = Form(...),
+    email: str = Form(...),
+    model_file: UploadFile = File(...),
+    predictions_csv: UploadFile = File(...),
+    requirements_txt: UploadFile = File(...),
+    metrics_csv: UploadFile = File(...),
+    test_x_csv: UploadFile | None = File(None),
+    test_x: UploadFile | None = File(None),  # alias: summit site sends this name
+    notebook_ipynb: UploadFile | None = File(None),  # optional so the summit proxy keeps working
+):
+    test_x_csv = test_x_csv or test_x
+    if test_x_csv is None:
+        raise HTTPException(422, "Field required: test_x_csv (or test_x)")
+    if not TEST_X_PATH.exists():
+        raise HTTPException(400, "No test data uploaded yet (PUT /api/test-data first).")
+    if not model_file.filename.endswith(".joblib"):
+        raise HTTPException(400, "Model file must be a .joblib file.")
+    if "@" not in email or "." not in email.split("@")[-1]:
+        raise HTTPException(400, "A valid email address is required.")
+    for upload, label in (
+        (predictions_csv, "predictions_csv"),
+        (metrics_csv, "metrics_csv"),
+        (test_x_csv, "test_x_csv"),
+    ):
+        if not upload.filename.endswith(".csv"):
+            raise HTTPException(400, f"{label} must be a .csv file.")
+
+    sub_id = uuid.uuid4().hex[:12]
+    sub_dir = SUBMISSIONS_DIR / sub_id
+    sub_dir.mkdir(parents=True)
+
+    suffix = Path(model_file.filename).suffix
+    model_path = sub_dir / f"model{suffix}"
+    with model_path.open("wb") as f:
+        shutil.copyfileobj(model_file.file, f)
+    with (sub_dir / "team_predictions.csv").open("wb") as f:
+        shutil.copyfileobj(predictions_csv.file, f)
+    with (sub_dir / "requirements.txt").open("wb") as f:
+        shutil.copyfileobj(requirements_txt.file, f)
+    with (sub_dir / "metrics.csv").open("wb") as f:
+        shutil.copyfileobj(metrics_csv.file, f)
+    # stored for reference only — evaluation always runs on the official test X
+    with (sub_dir / "team_test_x.csv").open("wb") as f:
+        shutil.copyfileobj(test_x_csv.file, f)
+    if notebook_ipynb is not None:
+        if not notebook_ipynb.filename.endswith(".ipynb"):
+            raise HTTPException(400, "notebook_ipynb must be an .ipynb file.")
+        with (sub_dir / "notebook.ipynb").open("wb") as f:
+            shutil.copyfileobj(notebook_ipynb.file, f)
+
+    with db() as conn:
+        conn.execute(
+            "INSERT INTO submissions (id, team_name, email, model_filename, size_bytes, status, created_at)"
+            " VALUES (?, ?, ?, ?, ?, 'pending', ?)",
+            (
+                sub_id,
+                team_name.strip(),
+                email.strip().lower(),
+                model_file.filename,
+                model_path.stat().st_size,
+                datetime.now(timezone.utc).isoformat(),
+            ),
+        )
+
+    background.add_task(evaluate_submission, sub_id)
+    return {"id": sub_id, "status": "pending"}
+
+
+FILE_KINDS = ("notebook", "metrics", "predictions", "requirements", "test_x", "model")
+
+
+@app.get("/api/submissions")
+def list_submissions():
+    with db() as conn:
+        rows = conn.execute("SELECT * FROM submissions ORDER BY created_at DESC").fetchall()
+    out = []
+    for r in rows:
+        d = dict(r)
+        sub_dir = SUBMISSIONS_DIR / d["id"]
+        d["files"] = {k: _submission_file(sub_dir, k) is not None for k in FILE_KINDS}
+        out.append(d)
+    return out
+
+
+@app.get("/api/submissions/{sub_id}/files/{kind}")
+def download_submission_file(sub_id: str, kind: str):
+    if not sub_id.isalnum():
+        raise HTTPException(400, "Bad submission id")
+    if kind not in FILE_KINDS:
+        raise HTTPException(400, f"kind must be one of {FILE_KINDS}")
+    with db() as conn:
+        row = conn.execute("SELECT team_name FROM submissions WHERE id = ?", (sub_id,)).fetchone()
+    if row is None:
+        raise HTTPException(404, "Submission not found")
+    path = _submission_file(SUBMISSIONS_DIR / sub_id, kind)
+    if path is None:
+        raise HTTPException(404, f"This submission has no {kind} file")
+    safe_team = "".join(c if c.isalnum() or c in "-_" else "_" for c in row["team_name"])[:40]
+    return FileResponse(path, filename=f"{safe_team}_{sub_id}_{path.name}")
+
+
+def _notebook_metric_candidates(nb_path: Path) -> dict:
+    """Scan a notebook's cell outputs for printed accuracy / F1 values."""
+    try:
+        nb = json.loads(nb_path.read_text(errors="replace"))
+    except Exception:
+        return {}
+    chunks = []
+    for cell in nb.get("cells", []):
+        if cell.get("cell_type") != "code":
+            continue
+        for out in cell.get("outputs", []):
+            t = out.get("text") or (out.get("data") or {}).get("text/plain") or ""
+            chunks.append("".join(t) if isinstance(t, list) else str(t))
+    blob = "\n".join(chunks)
+    found = {"f1": set(), "accuracy": set()}
+    for m in re.finditer(r"(?i)\bf1(?:[\s_-]*score)?\b[^0-9\n]{0,25}([01](?:\.\d+)?)", blob):
+        found["f1"].add(round(float(m.group(1)), 4))
+    for m in re.finditer(r"(?i)\baccuracy\b[^0-9\n]{0,25}([01](?:\.\d+)?)", blob):
+        found["accuracy"].add(round(float(m.group(1)), 4))
+    # sklearn classification_report rows: per-class and avg rows both end "prec recall f1 support"
+    for m in re.finditer(r"(?im)^\s*\S[\S ]*?\s+(0(?:\.\d+)?|1(?:\.0+)?)\s+(0(?:\.\d+)?|1(?:\.0+)?)\s+(0(?:\.\d+)?|1(?:\.0+)?)\s+\d+\s*$", blob):
+        found["f1"].add(round(float(m.group(3)), 4))
+    # every bare 0-1 float in outputs — used as a weaker "appears unlabeled" fallback
+    all_numbers = set()
+    for m in re.finditer(r"\b(0\.\d{2,}|1\.0+)\b", blob):
+        all_numbers.add(round(float(m.group(1)), 4))
+    result = {k: sorted(v) for k, v in found.items()}
+    result["any"] = sorted(all_numbers)
+    return result
+
+
+def _closest(candidates: list, target: float, tol: float = 0.011):
+    hits = [c for c in candidates if abs(c - target) <= tol]
+    return min(hits, key=lambda c: abs(c - target)) if hits else None
+
+
+@app.get("/api/final-leaderboard")
+def final_leaderboard():
+    """Teams sorted by self-reported F1, with notebook cross-verification and model size."""
+    with db() as conn:
+        rows = [dict(r) for r in conn.execute("SELECT * FROM submissions").fetchall()]
+    entries = []
+    for r in rows:
+        sub_dir = SUBMISSIONS_DIR / r["id"]
+        metrics_path = _submission_file(sub_dir, "metrics")
+        reported = _parse_team_metrics(metrics_path) if metrics_path else {}
+        nb_path = _submission_file(sub_dir, "notebook")
+        nb = _notebook_metric_candidates(nb_path) if nb_path else {}
+        rep_f1, rep_acc = reported.get("f1"), reported.get("accuracy")
+        checks = {}
+        for name, val in (("f1", rep_f1), ("accuracy", rep_acc)):
+            if val is None:
+                checks[name] = "not_reported"
+            elif not nb:
+                checks[name] = "no_notebook"
+            elif _closest(nb.get(name, []), val) is not None:
+                checks[name] = "verified"
+            elif _closest(nb.get("any", []), val) is not None:
+                checks[name] = "found_unlabeled"
+            else:
+                checks[name] = "not_found"
+        entries.append(
+            {
+                "id": r["id"],
+                "team_name": r["team_name"],
+                "reported_f1": rep_f1,
+                "reported_accuracy": rep_acc,
+                "verify_f1": checks["f1"],
+                "verify_accuracy": checks["accuracy"],
+                "notebook_f1_candidates": nb.get("f1", []),
+                "notebook_accuracy_candidates": nb.get("accuracy", []),
+                "our_f1": r["f1"],
+                "our_accuracy": r["accuracy"],
+                "size_bytes": r["size_bytes"],
+                "official_status": r["status"],
+                "has_notebook": nb_path is not None,
+            }
+        )
+    entries.sort(key=lambda e: e["reported_f1"] if e["reported_f1"] is not None else -1, reverse=True)
+    for i, e in enumerate(entries, 1):
+        e["rank"] = i
+    return {"count": len(entries), "entries": entries}
+
+
+@app.get("/api/team-metrics")
+def team_metrics():
+    """Each submission's self-reported metrics parsed from its uploaded metrics.csv."""
+    with db() as conn:
+        rows = conn.execute(
+            "SELECT id, team_name, email, created_at FROM submissions ORDER BY created_at DESC"
+        ).fetchall()
+    out = []
+    for r in rows:
+        path = _submission_file(SUBMISSIONS_DIR / r["id"], "metrics")
+        out.append(
+            {
+                "id": r["id"],
+                "team_name": r["team_name"],
+                "email": r["email"],
+                "created_at": r["created_at"],
+                "metrics": _parse_team_metrics(path) if path else {},
+            }
+        )
+    return out
+
+
+@app.get("/api/submissions/{sub_id}")
+def get_submission(sub_id: str):
+    with db() as conn:
+        row = conn.execute("SELECT * FROM submissions WHERE id = ?", (sub_id,)).fetchone()
+    if row is None:
+        raise HTTPException(404, "Submission not found")
+    return dict(row)
+
+
+@app.get("/api/leaderboard")
+def leaderboard():
+    """Score = (Accuracy x 100) + Psize + Ptime.
+
+    Psize / Ptime = % of competing submissions with larger size / slower time.
+    Only submissions with both an accuracy and a measured time are scoreable;
+    failed-run submissions scored from a team csv get Ptime = 0.
+    """
+    with db() as conn:
+        rows = [dict(r) for r in conn.execute("SELECT * FROM submissions").fetchall()]
+
+    scoreable = [r for r in rows if r["accuracy"] is not None]
+    n = len(scoreable)
+    entries = []
+    for r in scoreable:
+        others = [o for o in scoreable if o["id"] != r["id"]]
+        denom = len(others) or 1
+        p_size = 100.0 * sum(1 for o in others if o["size_bytes"] > r["size_bytes"]) / denom
+        if r["avg_time_s"] is not None:
+            timed = [o for o in others if o["avg_time_s"] is not None]
+            p_time = 100.0 * sum(1 for o in timed if o["avg_time_s"] > r["avg_time_s"]) / (len(timed) or 1)
+        else:
+            p_time = 0.0
+        entries.append(
+            {
+                **r,
+                "p_size": round(p_size, 2),
+                "p_time": round(p_time, 2),
+                "score": round(r["accuracy"] * 100 + p_size + p_time, 2),
+            }
+        )
+    entries.sort(key=lambda e: e["score"], reverse=True)
+    for i, e in enumerate(entries, 1):
+        e["rank"] = i
+    return {"count": n, "entries": entries}
+
+
+@app.post("/api/submissions/{sub_id}/custom-eval", status_code=201)
+def start_custom_eval(sub_id: str, background: BackgroundTasks):
+    """Manually run a submission's model on the team's OWN uploaded test X."""
+    sub_dir = SUBMISSIONS_DIR / sub_id
+    with db() as conn:
+        row = conn.execute("SELECT team_name FROM submissions WHERE id = ?", (sub_id,)).fetchone()
+    if row is None or not sub_dir.exists():
+        raise HTTPException(404, "Submission not found")
+    if _team_x_path(sub_dir) is None:
+        raise HTTPException(400, "This submission has no uploaded test X csv.")
+    with db() as conn:
+        pending = conn.execute(
+            "SELECT 1 FROM custom_evals WHERE submission_id = ? AND status = 'pending'", (sub_id,)
+        ).fetchone()
+        if pending:
+            raise HTTPException(409, "A custom eval for this submission is already running.")
+        eval_id = uuid.uuid4().hex[:12]
+        conn.execute(
+            "INSERT INTO custom_evals (id, submission_id, team_name, status, created_at)"
+            " VALUES (?, ?, ?, 'pending', ?)",
+            (eval_id, sub_id, row["team_name"], datetime.now(timezone.utc).isoformat()),
+        )
+    background.add_task(run_custom_eval, eval_id, sub_id)
+    return {"id": eval_id, "submission_id": sub_id, "status": "pending"}
+
+
+@app.get("/api/custom-evals")
+def list_custom_evals():
+    with db() as conn:
+        rows = conn.execute("SELECT * FROM custom_evals ORDER BY created_at DESC").fetchall()
+    return [dict(r) for r in rows]
+
+
+@app.put("/api/test-data")
+async def update_test_data(
+    test_x: UploadFile | None = File(None),
+    test_y: UploadFile | None = File(None),
+):
+    if test_x is None and test_y is None:
+        raise HTTPException(400, "Provide test_x and/or test_y csv files.")
+    updated = {}
+    for upload, path, key in ((test_x, TEST_X_PATH, "test_x"), (test_y, TEST_Y_PATH, "test_y")):
+        if upload is None:
+            continue
+        tmp = path.with_suffix(".tmp")
+        with tmp.open("wb") as f:
+            shutil.copyfileobj(upload.file, f)
+        try:
+            n = len(pd.read_csv(tmp))
+        except Exception as e:
+            tmp.unlink(missing_ok=True)
+            raise HTTPException(400, f"{key} is not a valid csv: {e}")
+        tmp.replace(path)
+        updated[key] = {"rows": n}
+    return {"updated": updated}

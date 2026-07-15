@@ -1,0 +1,22 @@
+# python
+.venv/
+__pycache__/
+*.pyc
+
+# runtime data: submissions, per-team venvs, results db, logs
+data/
+*.log
+
+# local datasets & ground truth (judging secrets — do not publish)
+*.csv
+*.joblib
+*.pkl
+
+# secrets
+dsummit_ed25519*
+*_ed25519*
+*.pem
+
+# misc
+.DS_Store
+*.pdf

@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Notebooks — A–Z</title>
+<style>
+  :root { --bg:#0f1117; --card:#181b23; --line:#2a2f3c; --text:#e8eaf0; --muted:#9aa1b2; --accent:#5b8cff; --ok:#3fbf7f; --bad:#e5646c; }
+  * { box-sizing:border-box; margin:0; }
+  body { font:15px/1.5 -apple-system, "Segoe UI", sans-serif; background:var(--bg); color:var(--text); padding:2rem 1rem; }
+  .wrap { max-width:1100px; margin:0 auto; display:grid; gap:1.5rem; }
+  h1 { font-size:1.4rem; }
+  a { color:var(--accent); }
+  .card { background:var(--card); border:1px solid var(--line); border-radius:12px; padding:1.25rem; }
+  .scroll { overflow-x:auto; }
+  table { width:100%; border-collapse:collapse; font-size:.88rem; white-space:nowrap; }
+  th, td { padding:.5rem .7rem; text-align:left; border-bottom:1px solid var(--line); }
+  th { color:var(--muted); font-weight:600; font-size:.78rem; text-transform:uppercase; letter-spacing:.04em; }
+  .hint { font-size:.8rem; color:var(--muted); }
+  nav a { margin-right:1rem; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>📓 Team Notebooks <span class="hint">— sorted by team name A–Z</span></h1>
+  <nav class="hint">
+    <a href="/?admin=1">← Leaderboard</a>
+    <a href="/metrics.html">Team metrics</a>
+    <a href="/custom-eval.html">Custom evaluation</a>
+  </nav>
+  <div class="card">
+    <div class="scroll"><table>
+      <thead><tr><th>#</th><th>Team</th><th>Submission ID</th><th>Submitted</th><th>Notebook</th></tr></thead>
+      <tbody id="body"><tr><td colspan="5">Loading…</td></tr></tbody>
+    </table></div>
+  </div>
+</div>
+<script src="/preview.js"></script>
+<script>
+const API = window.API = localStorage.getItem('apiBase')
+  || (!location.port || location.port === '80' || location.port === '443' ? ''
+      : `http://${location.hostname || 'localhost'}:${location.hostname === 'localhost' || !location.hostname ? 8000 : 8001}`);
+const esc = t => (t||'').replaceAll('&','&amp;').replaceAll('<','&lt;');
+
+fetch(API + '/api/submissions').then(r => r.json()).then(subs => {
+  subs.sort((a, b) => a.team_name.localeCompare(b.team_name, undefined, {sensitivity: 'base'})
+                      || a.created_at.localeCompare(b.created_at));
+  document.getElementById('body').innerHTML = subs.length ? subs.map((s, i) => `
+    <tr><td>${i + 1}</td><td>${esc(s.team_name)}</td><td class="hint">${s.id}</td>
+    <td>${new Date(s.created_at).toLocaleString()}</td>
+    <td>${s.files.notebook
+        ? `<a href="javascript:void(0)" onclick="previewFile('${s.id}','notebook','${esc(s.team_name).replaceAll("'","")} — notebook.ipynb')">👁 preview</a>`
+        : '<span class="hint">— not uploaded</span>'}</td></tr>`).join('')
+    : '<tr><td colspan="5">No submissions.</td></tr>';
+}).catch(() => document.getElementById('body').innerHTML = '<tr><td colspan="5">Cannot reach API.</td></tr>');
+</script>
+</body>
+</html>

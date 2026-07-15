@@ -1,0 +1,6 @@
+fastapi
+uvicorn[standard]
+python-multipart
+pandas
+joblib
+scikit-learn==1.6.1  # match Google Colab's version so teams' pickles load
